@@ -98,9 +98,10 @@ export const postsAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  likePost: (id: string) =>
+  likePost: (id: string, type: string = 'LIKE') =>
     request(`/posts/${id}/like`, {
       method: 'POST',
+      body: JSON.stringify({ type }),
     }),
   addComment: (id: string, data: { content: string }) =>
     request(`/posts/${id}/comments`, {

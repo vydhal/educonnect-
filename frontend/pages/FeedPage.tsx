@@ -1,16 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IMAGES } from '../constants';
 import { Post, Comment } from '../types';
 import { postsAPI, authAPI } from '../api';
+import { ReactionButton } from '../components/ReactionButton';
+import { RichPostInput } from '../components/RichPostInput';
+
+// Extend Post type locally if not updated in types.ts yet
+interface FeedPost extends Post {
+  userReaction?: string | null;
+}
 
 const FeedPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [interactionModal, setInteractionModal] = useState<{ type: 'aplause' | 'comment' | 'send' | null, postId: string | null }>({ type: null, postId: null });
-  const [postContent, setPostContent] = useState('');
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Comments state
@@ -37,7 +41,7 @@ const FeedPage: React.FC = () => {
     return "Agora mesmo";
   };
 
-  const formatPost = (apiPost: any): Post => ({
+  const formatPost = (apiPost: any): FeedPost => ({
     id: apiPost.id,
     author: apiPost.author.name,
     authorId: apiPost.author.id,
@@ -49,7 +53,8 @@ const FeedPage: React.FC = () => {
     comments: apiPost.comments,
     shares: 0,
     image: apiPost.image,
-    isVerified: apiPost.author.verified
+    isVerified: apiPost.author.verified,
+    userReaction: apiPost.userReaction
   });
 
   const fetchPosts = async () => {
@@ -97,25 +102,33 @@ const FeedPage: React.FC = () => {
     navigate('/login');
   };
 
-  const handleCreatePost = async () => {
-    if (!postContent.trim()) return;
-    try {
-      await postsAPI.createPost({ content: postContent });
-      setPostContent('');
-      setIsModalOpen(false);
-      fetchPosts();
-    } catch (error) {
-      console.error('Failed to create post', error);
-      alert('Erro ao criar publicação');
-    }
+  const handlePostCreated = () => {
+    setIsModalOpen(false);
+    fetchPosts();
   };
 
-  const handleLike = async (id: string) => {
+  const handleReaction = async (id: string, type: string) => {
     try {
-      await postsAPI.likePost(id);
-      fetchPosts();
+      // Optimistic update
+      setPosts(prev => prev.map(p => {
+        if (p.id === id) {
+          const wasLiked = !!p.userReaction;
+          const isToggleOff = wasLiked && p.userReaction === type;
+
+          return {
+            ...p,
+            userReaction: isToggleOff ? null : type,
+            likes: isToggleOff ? p.likes - 1 : (wasLiked ? p.likes : p.likes + 1)
+          };
+        }
+        return p;
+      }));
+
+      await postsAPI.likePost(id, type);
+      fetchPosts(); // Sync with server
     } catch (error) {
       console.error(error);
+      fetchPosts(); // Revert on error
     }
   };
 
@@ -203,16 +216,18 @@ const FeedPage: React.FC = () => {
                   )}
                 </div>
                 <div className="px-4 pb-4">
-                  <p className="text-sm leading-relaxed dark:text-gray-300">{post.content}</p>
+                  <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{post.content}</p>
                 </div>
                 {post.image && <div className="w-full aspect-video bg-gray-100 bg-cover bg-center border-y dark:border-gray-800" style={{ backgroundImage: `url(${post.image})` }} />}
                 <div className="grid grid-cols-3 p-1">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${post.likes > 0 ? 'text-primary bg-primary/5' : 'text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                  >
-                    <span className={`material-symbols-outlined ${post.likes > 0 ? 'font-fill-1' : ''}`}>volunteer_activism</span> {post.likes > 0 ? post.likes : 'Aplaudir'}
-                  </button>
+                  <div className="flex justify-center">
+                    <ReactionButton
+                      postId={post.id}
+                      currentUserReaction={post.userReaction || null}
+                      likesCount={post.likes}
+                      onReact={(type) => handleReaction(post.id, type)}
+                    />
+                  </div>
                   <button
                     onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
                     className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -241,7 +256,11 @@ const FeedPage: React.FC = () => {
       </main>
 
       {/* MODALS */}
-      {isModalOpen && <CreatePostModal onClose={() => setIsModalOpen(false)} content={postContent} setContent={setPostContent} onSubmit={handleCreatePost} />}
+      {isModalOpen && (
+        <CreatePostModal onClose={() => setIsModalOpen(false)}>
+          <RichPostInput onPostCreated={handlePostCreated} userAvatar={user?.avatar} />
+        </CreatePostModal>
+      )}
 
       {interactionModal.type === 'aplause' && (
         <InteractionModal title="Aplausos" onClose={() => setInteractionModal({ type: null, postId: null })}>
@@ -355,7 +374,7 @@ export const Header: React.FC<{ activeTab: 'home' | 'network' | 'projects', onLo
   );
 };
 
-const CreatePostModal: React.FC<{ onClose: () => void, content: string, setContent: (v: string) => void, onSubmit: () => void }> = ({ onClose, content, setContent, onSubmit }) => (
+const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -364,10 +383,7 @@ const CreatePostModal: React.FC<{ onClose: () => void, content: string, setConte
         <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
       </div>
       <div className="p-6">
-        <textarea autoFocus value={content} onChange={(e) => setContent(e.target.value)} placeholder="O que você quer compartilhar com a rede?" className="w-full min-h-[180px] text-lg bg-transparent border-none focus:ring-0 resize-none" />
-      </div>
-      <div className="px-6 pb-6">
-        <button onClick={onSubmit} disabled={!content.trim()} className={`w-full py-3.5 rounded-xl font-bold text-lg shadow-lg transition-all ${content.trim() ? 'bg-primary text-white shadow-primary/20' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>Publicar</button>
+        {children}
       </div>
     </div>
   </div>

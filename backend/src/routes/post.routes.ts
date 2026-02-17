@@ -45,7 +45,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
 });
 
 // Get all posts (feed)
-router.get('/', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const posts = await prisma.post.findMany({
       include: {
@@ -57,7 +57,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         },
         likes: req.userId ? {
           where: { userId: req.userId },
-          select: { id: true }
+          select: { id: true, type: true }
         } : false
       },
       orderBy: { createdAt: 'desc' },
@@ -68,7 +68,8 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       ...post,
       likes: post._count.likes,
       comments: post._count.comments,
-      liked: req.userId ? (post.likes as any)?.length > 0 : false
+      liked: req.userId ? (post.likes as any)?.length > 0 : false,
+      userReaction: req.userId ? (post.likes as any)?.[0]?.type || null : null
     }));
 
     res.json(formattedPosts);
@@ -78,7 +79,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 });
 
 // Get post by id
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
@@ -120,6 +121,9 @@ router.post('/:id/like', authMiddleware, async (req: AuthenticatedRequest, res: 
       throw new AppError('Unauthorized', 401);
     }
 
+    const { type } = req.body; // LIKE, LOVE, CLAP, ROCKET, IDEA
+    const reactionType = type || 'LIKE';
+
     const existingLike = await prisma.like.findUnique({
       where: {
         postId_userId: {
@@ -130,20 +134,32 @@ router.post('/:id/like', authMiddleware, async (req: AuthenticatedRequest, res: 
     });
 
     if (existingLike) {
-      await prisma.like.delete({
-        where: { id: existingLike.id }
-      });
-      return res.json({ liked: false });
+      if (existingLike.type === reactionType) {
+        // Same type: Toggle OFF
+        await prisma.like.delete({
+          where: { id: existingLike.id }
+        });
+        return res.json({ liked: false, type: null });
+      } else {
+        // Different type: Update
+        await prisma.like.update({
+          where: { id: existingLike.id },
+          data: { type: reactionType }
+        });
+        return res.json({ liked: true, type: reactionType });
+      }
     }
 
+    // New Like
     await prisma.like.create({
       data: {
         postId: req.params.id,
-        userId: req.userId
+        userId: req.userId,
+        type: reactionType
       }
     });
 
-    res.json({ liked: true });
+    res.json({ liked: true, type: reactionType });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });
