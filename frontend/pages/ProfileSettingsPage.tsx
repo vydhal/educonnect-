@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
 import { Header } from './FeedPage'; // Reuse Header
 import { useSettings } from '../contexts/SettingsContext'; // For theme toggle
+import { ImageUpload } from '../components/ImageUpload';
 
 const ProfileSettingsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -152,13 +153,10 @@ const ProfileSettingsPage: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">URL do Avatar (Imagem)</label>
-                                            <input
-                                                type="text"
-                                                value={avatar}
-                                                onChange={(e) => setAvatar(e.target.value)}
-                                                placeholder="https://..."
-                                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none dark:text-white"
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto de Perfil</label>
+                                            <ImageUpload
+                                                currentImage={avatar}
+                                                onImageUploaded={setAvatar}
                                             />
                                         </div>
                                     </div>

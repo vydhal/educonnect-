@@ -9,6 +9,9 @@ import moderationRoutes from './routes/moderation.routes.js';
 import userRoutes from './routes/user.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
+import path from 'path';
+
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -27,11 +30,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-
-
-
-
-
+// Static files
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -40,6 +40,7 @@ app.use('/api/moderation', moderationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -32,16 +32,14 @@ const ProfileSelectionPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-[1200px]">
           {profiles.map(p => (
-            <div 
+            <div
               key={p.role}
               onClick={() => setSelected(p.role)}
-              className={`p-8 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center text-center gap-4 ${
-                selected === p.role ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'
-              }`}
+              className={`p-8 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center text-center gap-4 ${selected === p.role ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'
+                }`}
             >
-              <div className={`size-16 rounded-full flex items-center justify-center transition-colors ${
-                selected === p.role ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
-              }`}>
+              <div className={`size-16 rounded-full flex items-center justify-center transition-colors ${selected === p.role ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                }`}>
                 <span className="material-symbols-outlined text-3xl">{p.icon}</span>
               </div>
               <h3 className="text-xl font-bold">{p.label}</h3>
@@ -51,14 +49,15 @@ const ProfileSelectionPage: React.FC = () => {
         </div>
 
         <div className="mt-16">
-          <button 
-            disabled={!selected}
+          <button
+            disabled={!selected || selected === 'ALUNO' || selected === 'COMUNIDADE'}
             onClick={() => navigate(`/register/${selected?.toLowerCase()}`)}
-            className={`min-w-[280px] h-14 rounded-xl font-bold text-lg shadow-lg transition-all ${
-              selected ? 'bg-primary text-white shadow-primary/25 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
+            className={`min-w-[280px] h-14 rounded-xl font-bold text-lg shadow-lg transition-all ${selected && selected !== 'ALUNO' && selected !== 'COMUNIDADE'
+                ? 'bg-primary text-white shadow-primary/25 active:scale-95'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
           >
-            Continuar
+            {selected === 'ALUNO' || selected === 'COMUNIDADE' ? 'Em Breve' : 'Continuar'}
           </button>
         </div>
 

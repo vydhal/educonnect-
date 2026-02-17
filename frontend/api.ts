@@ -211,3 +211,24 @@ export const adminAPI = {
     return response.json();
   }
 };
+
+export const uploadAPI = {
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
+
+    // Upload endpoint
+    const response = await fetch(`${API_URL}/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }, // Optional depending on backend
+      body: formData
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Falha no upload');
+    }
+    return response.json(); // Returns { url: ... }
+  }
+};
