@@ -20,11 +20,10 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     };
 
     return (
-        <div className="relative w-full aspect-video bg-black group overflow-hidden">
+        <div className="relative w-full aspect-square bg-black group overflow-hidden">
             <div
                 className="w-full h-full bg-contain bg-center bg-no-repeat transition-all duration-300"
                 style={{ backgroundImage: `url(${images[currentIndex]})` }}
-                onClick={() => window.open(images[currentIndex], '_blank')}
             />
 
             {/* Navigation Arrows */}

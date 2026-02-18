@@ -166,12 +166,41 @@ const FeedPage: React.FC = () => {
   const renderContent = (content: string) => {
     // Regex for mentions: @word
     const parts = content.split(/(@[\w\u00C0-\u00FF]+)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('@')) {
-        return <span key={index} className="text-primary font-bold hover:underline cursor-pointer">{part}</span>;
-      }
-      return part;
-    });
+
+    // Check for YouTube links
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const youtubeMatch = content.match(youtubeRegex);
+    let youtubeEmbed = null;
+
+    if (youtubeMatch && youtubeMatch[1]) {
+      youtubeEmbed = (
+        <div className="mt-3 w-full aspect-video rounded-xl overflow-hidden shadow-sm">
+          <iframe
+            width="100%"
+            height="100%"
+            src={`https://www.youtube.com/embed/${youtubeMatch[1]}`}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">
+          {parts.map((part, index) => {
+            if (part.startsWith('@')) {
+              return <span key={index} className="text-primary font-bold hover:underline cursor-pointer">{part}</span>;
+            }
+            return part;
+          })}
+        </p>
+        {youtubeEmbed}
+      </>
+    );
   };
 
   return (
