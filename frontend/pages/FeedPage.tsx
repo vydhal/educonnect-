@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { postsAPI, authAPI } from '../api';
+import { postsAPI, authAPI, usersAPI } from '../api';
 import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
 import { Header } from '../components/Header';
+import { ImageCarousel } from '../components/ImageCarousel';
 
 // Extend Post type locally if not updated in types.ts yet
 interface FeedPost extends Post {
   userReaction?: string | null;
+  images?: string[];
 }
 
 const FeedPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
   const [interactionModal, setInteractionModal] = useState<{ type: 'aplause' | 'comment' | 'send' | null, postId: string | null }>({ type: null, postId: null });
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +26,7 @@ const FeedPage: React.FC = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentText, setCommentText] = useState('');
 
-  // Helper to calculate relative time
+  // Time ago helper
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -53,7 +56,8 @@ const FeedPage: React.FC = () => {
     likes: apiPost.likes,
     comments: apiPost.comments,
     shares: 0,
-    image: apiPost.image,
+    image: apiPost.image, // Legacy
+    images: apiPost.images && apiPost.images.length > 0 ? apiPost.images : (apiPost.image ? [apiPost.image] : []),
     isVerified: apiPost.author.verified,
     userReaction: apiPost.userReaction
   });
@@ -73,19 +77,17 @@ const FeedPage: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-    // Fetch user profile
     authAPI.getProfile()
       .then(profile => setUser(profile))
       .catch(err => console.error('Failed to load profile', err));
   }, []);
 
-  // Fetch comments when modal opens
+  // Load comments when modal opens
   useEffect(() => {
     if (interactionModal.type === 'comment' && interactionModal.postId) {
       setLoadingComments(true);
       postsAPI.getPost(interactionModal.postId)
         .then(post => {
-          // The API returns the post with a 'comments' array
           if (post.comments) {
             setActivePostComments(post.comments);
           }
@@ -108,14 +110,19 @@ const FeedPage: React.FC = () => {
     fetchPosts();
   };
 
+  const handlePostUpdated = (updatedPost: any) => {
+    setEditingPost(null);
+    // Optimistic update or refresh
+    setPosts(prev => prev.map(p => p.id === updatedPost.id ? formatPost(updatedPost) : p));
+  };
+
+
   const handleReaction = async (id: string, type: string) => {
     try {
-      // Optimistic update
       setPosts(prev => prev.map(p => {
         if (p.id === id) {
           const wasLiked = !!p.userReaction;
           const isToggleOff = wasLiked && p.userReaction === type;
-
           return {
             ...p,
             userReaction: isToggleOff ? null : type,
@@ -124,12 +131,11 @@ const FeedPage: React.FC = () => {
         }
         return p;
       }));
-
       await postsAPI.likePost(id, type);
-      fetchPosts(); // Sync with server
+      fetchPosts();
     } catch (error) {
       console.error(error);
-      fetchPosts(); // Revert on error
+      fetchPosts();
     }
   };
 
@@ -149,14 +155,23 @@ const FeedPage: React.FC = () => {
     if (!commentText.trim() || !interactionModal.postId) return;
     try {
       const newComment = await postsAPI.addComment(interactionModal.postId, { content: commentText });
-      // Add to local list immediately
       setActivePostComments(prev => [newComment, ...prev]);
       setCommentText('');
-      // Refresh feed to update comment count
       fetchPosts();
     } catch (error) {
       console.error('Failed to send comment', error);
     }
+  };
+
+  const renderContent = (content: string) => {
+    // Regex for mentions: @word
+    const parts = content.split(/(@[\w\u00C0-\u00FF]+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        return <span key={index} className="text-primary font-bold hover:underline cursor-pointer">{part}</span>;
+      }
+      return part;
+    });
   };
 
   return (
@@ -207,20 +222,34 @@ const FeedPage: React.FC = () => {
                     </div>
                   </div>
                   {user && (user.id === post.authorId || user.role === 'ADMIN') && (
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
-                      title="Excluir publicação"
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingPost(post)}
+                        className="text-gray-400 hover:text-primary transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                        title="Editar publicação"
+                      >
+                        <span className="material-symbols-outlined">edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                        title="Excluir publicação"
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="px-4 pb-4">
-                  <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{post.content}</p>
+                  <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{renderContent(post.content)}</p>
                 </div>
-                {post.image && <div className="w-full aspect-video bg-gray-100 bg-cover bg-center border-y dark:border-gray-800" style={{ backgroundImage: `url(${post.image})` }} />}
-                <div className="grid grid-cols-3 p-1">
+
+                {/* GALLERY / CAROUSEL */}
+                {post.images && post.images.length > 0 && (
+                  <ImageCarousel images={post.images} />
+                )}
+
+                <div className="grid grid-cols-3 p-1 border-t dark:border-gray-800 mt-2">
                   <div className="flex justify-center">
                     <ReactionButton
                       postId={post.id}
@@ -260,6 +289,22 @@ const FeedPage: React.FC = () => {
       {isModalOpen && (
         <CreatePostModal onClose={() => setIsModalOpen(false)}>
           <RichPostInput onPostCreated={handlePostCreated} userAvatar={user?.avatar} />
+        </CreatePostModal>
+      )}
+
+      {editingPost && (
+        <CreatePostModal onClose={() => setEditingPost(null)}>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold mb-2">Editar Publicação</h3>
+          </div>
+          <RichPostInput
+            onPostCreated={handlePostUpdated}
+            userAvatar={user?.avatar}
+            initialContent={editingPost.content}
+            initialImages={editingPost.images}
+            postId={editingPost.id}
+            submitLabel="Salvar Edição"
+          />
         </CreatePostModal>
       )}
 
@@ -331,20 +376,17 @@ const FeedPage: React.FC = () => {
   );
 };
 
-
-
 // Reusable Components
-// Header moved to ../components/Header.tsx
 
 const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center">
+    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
         <h2 className="text-xl font-black">Criar Publicação</h2>
         <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
       </div>
-      <div className="p-6">
+      <div className="p-6 overflow-y-auto custom-scrollbar overflow-x-visible">
         {children}
       </div>
     </div>
@@ -363,8 +405,6 @@ const InteractionModal: React.FC<{ title: string, onClose: () => void, children:
     </div>
   </div>
 );
-
-// NavIcon moved to ../components/Header.tsx
 
 const SchoolSuggest: React.FC<{ name: string, type: string }> = ({ name, type }) => (
   <div className="flex items-center justify-between gap-2 mb-4">

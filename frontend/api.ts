@@ -93,9 +93,14 @@ export const authAPI = {
 export const postsAPI = {
   getPosts: () => request('/posts'),
   getPost: (id: string) => request(`/posts/${id}`),
-  createPost: (data: { content: string; image?: string }) =>
+  createPost: (data: { content: string; image?: string; images?: string[] }) =>
     request('/posts', {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updatePost: (id: string, data: { content?: string; images?: string[] }) =>
+    request(`/posts/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
   likePost: (id: string, type: string = 'LIKE') =>

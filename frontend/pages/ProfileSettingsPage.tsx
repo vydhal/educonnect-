@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
-import { Header } from './FeedPage'; // Reuse Header
+import { Header } from '../components/Header';
 import { useSettings } from '../contexts/SettingsContext'; // For theme toggle
 import { ImageUpload } from '../components/ImageUpload';
 

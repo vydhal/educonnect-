@@ -8,25 +8,32 @@ const router = Router();
 // Create post
 router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { content, image } = req.body;
+    const { content, image, images } = req.body;
 
-    if (!content) {
-      throw new AppError('Content is required', 400);
+    if (!content && (!images || images.length === 0) && !image) {
+      throw new AppError('Content or image is required', 400);
     }
 
     if (!req.userId) {
       throw new AppError('Unauthorized', 401);
     }
 
+    // Handle images array and legacy image field
+    let imageList = images || [];
+    if (image && !imageList.includes(image)) {
+      imageList = [image, ...imageList];
+    }
+
     const post = await prisma.post.create({
       data: {
-        content,
-        image,
+        content: content || '', // Allow empty content if there are images
+        image: imageList.length > 0 ? imageList[0] : null, // Backward compatibility
+        images: imageList,
         authorId: req.userId
       },
       include: {
         author: {
-          select: { id: true, name: true, avatar: true, role: true, verified: true }
+          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true }
         },
         _count: {
           select: { comments: true, likes: true }
@@ -35,6 +42,58 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     });
 
     res.status(201).json(post);
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+// Update post
+router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { content, images } = req.body;
+
+    if (!req.userId) {
+      throw new AppError('Unauthorized', 401);
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    if (post.authorId !== req.userId) {
+      throw new AppError('Not authorized', 403);
+    }
+
+    // Handle images
+    const imageList = images || post.images; // If not provided, keep existing? Or empty? Assuming update sends full state.
+    // Ideally frontend sends the new desired state of images.
+
+    const updatedPost = await prisma.post.update({
+      where: { id: req.params.id },
+      data: {
+        content: content !== undefined ? content : post.content,
+        images: images !== undefined ? images : post.images,
+        image: (images && images.length > 0) ? images[0] : (images !== undefined ? null : post.image) // Update legacy field
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true }
+        },
+        _count: {
+          select: { comments: true, likes: true }
+        }
+      }
+    });
+
+    res.json(updatedPost);
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });

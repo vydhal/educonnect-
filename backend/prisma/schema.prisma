@@ -55,7 +55,8 @@ model UserFollow {
 model Post {
   id        String     @id @default(cuid())
   content   String
-  image     String?
+  image     String?   // Deprecated, keeping for backward compatibility
+  images    String[]  // New: Support for multiple images (Gallery)
   authorId  String
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
