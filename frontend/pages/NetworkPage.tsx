@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Header } from './FeedPage';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { usersAPI } from '../api';
 

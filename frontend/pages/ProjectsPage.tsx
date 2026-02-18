@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Header } from './FeedPage';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 
 const ProjectsPage: React.FC = () => {
@@ -30,7 +30,7 @@ const ProjectsPage: React.FC = () => {
             <h1 className="text-4xl font-black text-[#0d121b] dark:text-white mb-2">Projetos Educacionais</h1>
             <p className="text-gray-500 max-w-2xl">Acesse e compartilhe planos de aula, projetos de intervenção e atividades inovadoras da rede.</p>
           </div>
-          <button 
+          <button
             onClick={() => setIsSubmitOpen(true)}
             className="bg-primary text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
           >
@@ -42,7 +42,7 @@ const ProjectsPage: React.FC = () => {
         {/* Areas Filter */}
         <div className="flex gap-3 overflow-x-auto pb-6 scrollbar-hide">
           {areas.map(area => (
-            <button 
+            <button
               key={area}
               onClick={() => setActiveArea(area)}
               className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold border-2 transition-all ${activeArea === area ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white dark:bg-gray-900 border-white dark:border-gray-800 text-gray-500 hover:border-primary/20'}`}
@@ -131,7 +131,7 @@ const ProjectsPage: React.FC = () => {
               </div>
             </form>
             <div className="p-8 border-t dark:border-gray-800">
-              <button 
+              <button
                 onClick={() => setIsSubmitOpen(false)}
                 className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
               >
