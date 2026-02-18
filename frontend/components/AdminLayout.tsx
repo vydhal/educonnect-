@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useSettings } from '../contexts/SettingsContext';
 
 const SidebarItem: React.FC<{ icon: string, label: string, path: string, active?: boolean }> = ({ icon, label, path, active }) => {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ const SidebarItem: React.FC<{ icon: string, label: string, path: string, active?
 const AdminLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { settings } = useSettings();
 
     const isActive = (path: string) => {
         if (path === '/admin' && (location.pathname === '/admin' || location.pathname === '/admin/stats')) return true;
@@ -29,11 +31,15 @@ const AdminLayout: React.FC = () => {
             {/* Sidebar */}
             <aside className="w-72 bg-navy-sidebar text-white flex flex-col fixed h-full z-10 shadow-2xl">
                 <div className="p-8 flex items-center gap-3">
-                    <div className="bg-primary size-10 rounded-xl flex items-center justify-center cursor-pointer" onClick={() => navigate('/')}>
-                        <span className="material-symbols-outlined text-white font-fill-1">school</span>
+                    <div className="bg-primary size-10 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden" onClick={() => navigate('/')}>
+                        {settings.LOGO_URL ? (
+                            <img src={settings.LOGO_URL} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="material-symbols-outlined text-white font-fill-1">school</span>
+                        )}
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-white text-base font-bold leading-none">EduConnect CG</h1>
+                        <h1 className="text-white text-base font-bold leading-none">{settings.APP_NAME || 'EduConnect CG'}</h1>
                         <p className="text-gray-500 text-[10px] mt-1 uppercase tracking-widest font-bold">Painel Admin</p>
                     </div>
                 </div>

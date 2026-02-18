@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
 import { authAPI } from '../api';
 import { setAuthToken } from '../api';
+import { useSettings } from '../contexts/SettingsContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { settings } = useSettings();
   const [email, setEmail] = useState('admin@educonnect.com');
   const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
@@ -49,10 +51,14 @@ const LoginPage: React.FC = () => {
         />
         <div className="relative z-10 flex flex-col justify-center px-24 text-white">
           <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl inline-block mb-10 w-fit">
-            <span className="material-symbols-outlined text-5xl font-fill-1">auto_awesome</span>
+            {settings.LOGO_URL ? (
+              <img src={settings.LOGO_URL} alt="Logo" className="h-12 w-auto object-contain brightness-0 invert" />
+            ) : (
+              <span className="material-symbols-outlined text-5xl font-fill-1">auto_awesome</span>
+            )}
           </div>
           <h1 className="text-5xl font-black leading-tight tracking-tight mb-6">
-            Conectando a Educação em Campina Grande
+            Conectando a Educação em {settings.APP_NAME?.replace('EduConnect ', '') || 'Campina Grande'}
           </h1>
           <p className="text-xl font-light opacity-90 max-w-lg mb-12">
             A plataforma oficial de colaboração entre professores e alunos da rede municipal. Juntos, transformamos o futuro da nossa cidade.
@@ -72,14 +78,22 @@ const LoginPage: React.FC = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 py-16">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-10 text-primary">
-            <span className="material-symbols-outlined text-4xl font-fill-1">auto_awesome</span>
-            <h2 className="text-2xl font-black">EduConnect CG</h2>
+            {settings.LOGO_URL ? (
+              <img src={settings.LOGO_URL} alt="Logo" className="h-10 w-auto object-contain" />
+            ) : (
+              <span className="material-symbols-outlined text-4xl font-fill-1">auto_awesome</span>
+            )}
+            <h2 className="text-2xl font-black">{settings.APP_NAME || 'EduConnect CG'}</h2>
           </div>
 
           <header className="mb-12">
             <div className="hidden lg:flex items-center gap-2 text-primary mb-8">
-              <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
-              <h2 className="text-xl font-bold">EduConnect CG</h2>
+              {settings.LOGO_URL ? (
+                <img src={settings.LOGO_URL} alt="Logo" className="h-8 w-auto object-contain" />
+              ) : (
+                <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
+              )}
+              <h2 className="text-xl font-bold">{settings.APP_NAME || 'EduConnect CG'}</h2>
             </div>
             <h1 className="text-3xl font-black text-[#0d121b] mb-2">Acesse sua conta</h1>
             <p className="text-gray-500">Entre com suas credenciais da rede municipal.</p>

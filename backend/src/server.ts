@@ -9,6 +9,7 @@ import moderationRoutes from './routes/moderation.routes.js';
 import userRoutes from './routes/user.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import path from 'path';
 
@@ -40,6 +41,7 @@ app.use('/api/moderation', moderationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Health check

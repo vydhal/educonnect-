@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface HeaderProps {
     activeTab: 'home' | 'network' | 'projects';
@@ -18,6 +19,7 @@ const NavIcon: React.FC<{ icon: string, label: string, active?: boolean, onClick
 export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propUser }) => {
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(propUser || null);
+    const { settings } = useSettings();
 
     useEffect(() => {
         // If propUser is provided (or becomes provided), sync it
@@ -40,8 +42,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
             <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-primary cursor-pointer" onClick={() => navigate('/')}>
-                        <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
-                        <h2 className="text-xl font-black hidden lg:block text-[#0d121b] dark:text-white">EduConnect CG</h2>
+                        {settings.LOGO_URL ? (
+                            <img src={settings.LOGO_URL} alt="Logo" className="h-8 w-auto object-contain" />
+                        ) : (
+                            <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
+                        )}
+                        <h2 className="text-xl font-black hidden lg:block text-[#0d121b] dark:text-white">{settings.APP_NAME || 'EduConnect CG'}</h2>
                     </div>
                 </div>
                 <nav className="flex gap-4 md:gap-8 items-center">

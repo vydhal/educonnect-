@@ -167,6 +167,11 @@ export const projectsAPI = {
     }),
 };
 
+// Settings API
+export const settingsAPI = {
+  getPublicSettings: () => request('/settings'),
+};
+
 // Admin API
 export const adminAPI = {
   getStats: () => request('/admin/stats'),
