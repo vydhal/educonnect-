@@ -177,7 +177,8 @@ router.post('/users', authMiddleware, adminMiddleware, async (req: Authenticated
                 email,
                 password: hashedPassword,
                 role: role ? role.toUpperCase() : 'ALUNO',
-                school,
+                school, // Legacy string
+                schoolId: req.body.schoolId, // New relation
                 verified: true
             }
         });
@@ -540,6 +541,7 @@ router.get('/schools', authMiddleware, adminMiddleware, async (req: Authenticate
                     zone: true,
                     address: true,
                     phone: true,
+                    schoolType: true,
                     verified: true
                 }
             }),
@@ -582,6 +584,7 @@ router.post('/schools', authMiddleware, adminMiddleware, async (req: Authenticat
                 zone,
                 address,
                 phone,
+                schoolType: req.body.schoolType, // Add schoolType
                 verified: true // Schools created by admin are verified
             }
         });

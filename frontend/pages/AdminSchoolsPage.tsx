@@ -13,6 +13,7 @@ interface SchoolUser {
     address?: string;
     phone?: string;
     avatar?: string;
+    schoolType?: 'ESCOLA' | 'CRECHE' | 'CMEI';
 }
 
 const AdminSchoolsPage: React.FC = () => {
@@ -33,7 +34,8 @@ const AdminSchoolsPage: React.FC = () => {
         inep: '',
         zone: 'URBANA',
         address: '',
-        phone: ''
+        phone: '',
+        schoolType: 'ESCOLA'
     });
     const [showPassword, setShowPassword] = useState(false);
 
@@ -61,7 +63,7 @@ const AdminSchoolsPage: React.FC = () => {
         try {
             await adminAPI.createSchool(newSchool);
             setIsCreating(false);
-            setNewSchool({ name: '', email: '', password: '', inep: '', zone: 'URBANA', address: '', phone: '' });
+            setNewSchool({ name: '', email: '', password: '', inep: '', zone: 'URBANA', address: '', phone: '', schoolType: 'ESCOLA' });
             fetchSchools();
             alert('Escola cadastrada com sucesso!');
         } catch (error) {
@@ -155,11 +157,17 @@ const AdminSchoolsPage: React.FC = () => {
                                 <td className="p-5 text-sm font-medium text-gray-700">{school.inep || '—'}</td>
                                 <td className="p-5">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${school.zone === 'RURAL'
-                                            ? 'bg-green-50 text-green-700 border-green-100'
-                                            : 'bg-blue-50 text-blue-700 border-blue-100'
+                                        ? 'bg-green-50 text-green-700 border-green-100'
+                                        : 'bg-blue-50 text-blue-700 border-blue-100'
                                         }`}>
                                         {school.zone || 'N/A'}
                                     </span>
+                                    {school.schoolType && (
+                                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${school.schoolType === 'CRECHE' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-purple-50 text-purple-700 border-purple-100'
+                                            }`}>
+                                            {school.schoolType}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="p-5 text-sm text-gray-600">
                                     <div className="flex flex-col">
@@ -267,6 +275,19 @@ const AdminSchoolsPage: React.FC = () => {
                                 >
                                     <option value="URBANA">Urbana</option>
                                     <option value="RURAL">Rural</option>
+                                </select>
+                            </div>
+
+                            <div className="col-span-2 md:col-span-1">
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Tipo de Unidade</label>
+                                <select
+                                    value={newSchool.schoolType}
+                                    onChange={e => setNewSchool({ ...newSchool, schoolType: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                >
+                                    <option value="ESCOLA">Escola (EMEF)</option>
+                                    <option value="CRECHE">Creche</option>
+                                    <option value="CMEI">CMEI</option>
                                 </select>
                             </div>
 

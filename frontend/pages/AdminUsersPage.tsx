@@ -28,8 +28,22 @@ const AdminUsersPage: React.FC = () => {
         email: '',
         password: '',
         role: 'ALUNO' as UserRole,
-        school: ''
+        school: '',
+        schoolId: ''
     });
+
+    const [schoolsList, setSchoolsList] = useState<{ id: string, name: string }[]>([]);
+
+    const fetchSchoolsList = async () => {
+        try {
+            const data = await adminAPI.getSchools('page=1&limit=100');
+            if (data.schools) {
+                setSchoolsList(data.schools.map((s: any) => ({ id: s.id, name: s.name })));
+            }
+        } catch (error) {
+            console.error('Failed to fetch schools list', error);
+        }
+    };
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -49,6 +63,7 @@ const AdminUsersPage: React.FC = () => {
 
     useEffect(() => {
         fetchUsers();
+        fetchSchoolsList();
     }, [page, search]);
 
     const handleDelete = async (id: string) => {
@@ -68,7 +83,7 @@ const AdminUsersPage: React.FC = () => {
         try {
             await adminAPI.createUser(newUser);
             setIsCreating(false);
-            setNewUser({ name: '', email: '', password: '', role: 'ALUNO', school: '' });
+            setNewUser({ name: '', email: '', password: '', role: 'ALUNO', school: '', schoolId: '' });
             fetchUsers();
             alert('Usuário criado com sucesso!');
         } catch (error) {
@@ -87,6 +102,7 @@ const AdminUsersPage: React.FC = () => {
                 email: editingUser.email,
                 role: editingUser.role,
                 school: editingUser.school,
+                schoolId: (editingUser as any).schoolId,
                 password: editPassword // Add password if set
             });
             setEditingUser(null);
@@ -401,13 +417,33 @@ const AdminUsersPage: React.FC = () => {
                             </div>
                             {newUser.role !== 'ADMIN' && (
                                 <div>
-                                    <label className="block text-sm font-bold mb-1.5 text-gray-700">Escola</label>
-                                    <input
-                                        value={newUser.school}
-                                        onChange={e => setNewUser({ ...newUser, school: e.target.value })}
-                                        className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
-                                        placeholder="Nome da escola"
-                                    />
+                                    <label className="block text-sm font-bold mb-1.5 text-gray-700">Escola / Unidade</label>
+                                    {newUser.role === 'PROFESSOR' ? (
+                                        <select
+                                            value={newUser.schoolId}
+                                            onChange={e => {
+                                                const selectedSchool = schoolsList.find(s => s.id === e.target.value);
+                                                setNewUser({
+                                                    ...newUser,
+                                                    schoolId: e.target.value,
+                                                    school: selectedSchool ? selectedSchool.name : ''
+                                                });
+                                            }}
+                                            className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                        >
+                                            <option value="">Selecione a Unidade de Lotação</option>
+                                            {schoolsList.map(school => (
+                                                <option key={school.id} value={school.id}>{school.name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            value={newUser.school}
+                                            onChange={e => setNewUser({ ...newUser, school: e.target.value })}
+                                            className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                            placeholder="Nome da escola (Alunos)"
+                                        />
+                                    )}
                                 </div>
                             )}
 

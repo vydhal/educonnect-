@@ -27,7 +27,8 @@ model User {
   address   String?
   zone      String?    // 'URBANA' | 'RURAL'
   phone     String?
-  
+  schoolType String?   // 'ESCOLA' | 'CRECHE' | 'CMEI'
+
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -39,6 +40,11 @@ model User {
   following UserFollow[] @relation("following")
   projects  Project[]
   moderationItems ModerationItem[]
+
+  // School-Teacher Relation
+  schoolId  String?
+  worksAt   User?   @relation("SchoolTeachers", fields: [schoolId], references: [id])
+  teachers  User[]  @relation("SchoolTeachers")
 }
 
 model UserFollow {

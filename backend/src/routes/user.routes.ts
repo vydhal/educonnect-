@@ -9,10 +9,20 @@ const router = Router();
 router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const role = req.query.role as string;
+    const schoolType = req.query.schoolType as string;
+    const schoolId = req.query.schoolId as string;
     const where: any = {};
 
     if (role && role !== 'TODAS') {
       where.role = role.toUpperCase();
+    }
+
+    if (schoolType) {
+      where.schoolType = schoolType;
+    }
+
+    if (schoolId) {
+      where.schoolId = schoolId;
     }
 
     if (req.userId) {
@@ -28,6 +38,8 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         role: true,
         avatar: true,
         school: true,
+        schoolType: true, // Add field
+        schoolId: true,   // Add field
         verified: true,
         _count: {
           select: { followers: true }
@@ -231,6 +243,8 @@ router.get('/search/:query', async (req: AuthenticatedRequest, res: Response) =>
         avatar: true,
         role: true,
         school: true,
+        schoolType: true,
+        schoolId: true,
         verified: true
       },
       take: 20
