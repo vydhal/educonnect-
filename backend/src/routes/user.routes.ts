@@ -38,8 +38,8 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         role: true,
         avatar: true,
         school: true,
-        schoolType: true, // Add field
-        schoolId: true,   // Add field
+        schoolType: true,
+        schoolId: true,
         verified: true,
         _count: {
           select: { followers: true }
@@ -51,6 +51,52 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 
     res.json(users);
   } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get Featured Schools (Ranking)
+router.get('/featured-schools', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    // Logic: Fetch schools and calculate engagement
+    // engagement = (posts * 1) + (projects * 3) + (likes_received * 0.5) + (followers * 1)
+
+    // For simplicity with Prisma and current model, we'll fetch schools with their counts
+    const schools = await prisma.user.findMany({
+      where: { role: 'ESCOLA' },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        schoolType: true,
+        verified: true,
+        _count: {
+          select: {
+            posts: true,
+            projects: true,
+            followers: true
+          }
+        }
+      },
+      take: 20 // Get more and filter/sort in memory or use raw query for complex ranking
+    });
+
+    // We can't easily count "likes received" across all posts in a single simple Prisma query without complex relations
+    // Let's stick to posts, projects and followers for now
+    const rankedSchools = schools.map(school => ({
+      id: school.id,
+      name: school.name,
+      avatar: school.avatar,
+      schoolType: school.schoolType,
+      verified: school.verified,
+      engagement: (school._count.posts * 1) + (school._count.projects * 3) + (school._count.followers * 1)
+    }))
+      .sort((a, b) => b.engagement - a.engagement)
+      .slice(0, 5);
+
+    res.json(rankedSchools);
+  } catch (error) {
+    console.error('Error fetching featured schools:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -117,7 +163,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
         school: true,
         verified: true,
         _count: {
-          select: { followers: true, following: true, posts: true }
+          select: { followers: true, following: true, posts: true, projects: true }
         }
       }
     });
@@ -126,7 +172,20 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
       throw new AppError('User not found', 404);
     }
 
-    res.json(user);
+    let isFollowing = false;
+    if (req.userId) {
+      const follow = await prisma.userFollow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: req.userId,
+            followingId: req.params.id
+          }
+        }
+      });
+      isFollowing = !!follow;
+    }
+
+    res.json({ ...user, isFollowing });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });

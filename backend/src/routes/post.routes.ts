@@ -24,12 +24,16 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
       imageList = [image, ...imageList];
     }
 
+    // Extract hashtags
+    const tags = content ? (content.match(/#[\w\u00C0-\u00FF]+/g) || []).map((tag: string) => tag.substring(1)) : [];
+
     const post = await prisma.post.create({
       data: {
         content: content || '', // Allow empty content if there are images
         image: imageList.length > 0 ? imageList[0] : null, // Backward compatibility
         images: imageList,
-        authorId: req.userId
+        authorId: req.userId,
+        tags
       },
       include: {
         author: {
@@ -76,12 +80,19 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
     const imageList = images || post.images; // If not provided, keep existing? Or empty? Assuming update sends full state.
     // Ideally frontend sends the new desired state of images.
 
+    // Extract hashtags if content is updated
+    let tags = post.tags;
+    if (content !== undefined) {
+      tags = (content.match(/#[\w\u00C0-\u00FF]+/g) || []).map((tag: string) => tag.substring(1));
+    }
+
     const updatedPost = await prisma.post.update({
       where: { id: req.params.id },
       data: {
         content: content !== undefined ? content : post.content,
         images: images !== undefined ? images : post.images,
-        image: (images && images.length > 0) ? images[0] : (images !== undefined ? null : post.image) // Update legacy field
+        image: (images && images.length > 0) ? images[0] : (images !== undefined ? null : post.image), // Update legacy field
+        tags
       },
       include: {
         author: {

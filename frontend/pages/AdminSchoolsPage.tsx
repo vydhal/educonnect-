@@ -75,14 +75,51 @@ const AdminSchoolsPage: React.FC = () => {
     const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        try {
-            await adminAPI.importSchools(file);
-            alert('Importação de escolas iniciada/concluída!');
-            fetchSchools();
-        } catch (error) {
-            console.error(error);
-            alert('Erro na importação');
-        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const text = event.target?.result as string;
+            if (!text) return;
+
+            // Simple CSV parser
+            const lines = text.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+
+            const schools = lines.slice(1).filter(line => line.trim() !== '').map(line => {
+                const values = line.split(',').map(v => v.trim());
+                const school: any = {};
+                headers.forEach((header, index) => {
+                    // Remove quotes if present
+                    let val = values[index] || '';
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.substring(1, val.length - 1);
+                    }
+                    school[header.toLowerCase()] = val;
+                });
+                return school;
+            });
+
+            if (schools.length === 0) {
+                alert('O arquivo parece estar vazio.');
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const result = await adminAPI.importSchools(schools);
+                alert(`Importação concluída! Sucesso: ${result.imported}, Erros: ${result.errors?.length || 0}`);
+                fetchSchools();
+            } catch (error: any) {
+                console.error(error);
+                alert('Erro na importação: ' + error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset input
+        e.target.value = '';
     };
 
     return (
@@ -94,12 +131,17 @@ const AdminSchoolsPage: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                     <button
+                        onClick={() => adminAPI.downloadSchoolTemplate()}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium border border-gray-200"
+                    >
+                        <span className="material-symbols-outlined">download</span> Baixar Modelo
+                    </button>
+                    <button
                         onClick={() => setIsCreating(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:brightness-110 shadow-lg shadow-primary/20 transition-all font-bold"
                     >
                         <span className="material-symbols-outlined">add_business</span> Nova Escola
                     </button>
-                    {/* Export could be reused from users or separate endpoint */}
                     <label className="flex items-center gap-2 px-4 py-2 bg-white border text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer font-medium">
                         <span className="material-symbols-outlined">upload</span> Importar CSV
                         <input type="file" accept=".csv" className="hidden" onChange={handleImport} />

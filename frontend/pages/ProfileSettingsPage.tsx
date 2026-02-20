@@ -105,6 +105,14 @@ const ProfileSettingsPage: React.FC = () => {
                                     <span className="material-symbols-outlined">palette</span> Aparência
                                 </button>
                             </nav>
+                            <div className="p-4 border-t dark:border-gray-800">
+                                <button
+                                    onClick={() => navigate(`/profile/${user?.id}`)}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 dark:bg-gray-800 text-primary hover:bg-primary hover:text-white transition-all group"
+                                >
+                                    <span className="material-symbols-outlined text-sm transition-transform group-hover:scale-110">visibility</span> Ver Perfil Público
+                                </button>
+                            </div>
                         </div>
                     </aside>
 

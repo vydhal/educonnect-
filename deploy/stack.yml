@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # 1. Backend API
+  backend:
+    image: vydhal/educonnect-backend:latest
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=5000
+      - NODE_ENV=production
+      - FRONTEND_URL=https://portaledu.simplisoft.com.br
+      - TZ=America/Sao_Paulo
+    depends_on:
+      - educonnect_db
+    volumes:
+      - educonnect_uploads:/app/public/uploads
+    networks:
+      - SimpliSoft
+      - interna_network_docs
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=SimpliSoft"
+        - "traefik.http.routers.educonnect-backend.rule=Host(`portaledu.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
+        - "traefik.http.routers.educonnect-backend.entrypoints=websecure"
+        - "traefik.http.routers.educonnect-backend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.educonnect-backend.priority=100"
+        - "traefik.http.services.educonnect-backend.loadbalancer.server.port=5000"
+        - "traefik.http.routers.educonnect-backend.middlewares=educonnect-upload-limit@docker"
+        - "traefik.http.middlewares.educonnect-upload-limit.buffering.maxRequestBodyBytes=52428800"
+        - "traefik.http.middlewares.educonnect-upload-limit.buffering.memRequestBodyBytes=10485760"
+
+  # 2. Frontend
+  frontend:
+    image: vydhal/educonnect-frontend:latest
+    environment:
+      - TZ=America/Sao_Paulo
+    networks:
+      - SimpliSoft
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=SimpliSoft"
+        - "traefik.http.routers.educonnect-frontend.rule=Host(`portaledu.simplisoft.com.br`)"
+        - "traefik.http.routers.educonnect-frontend.entrypoints=websecure"
+        - "traefik.http.routers.educonnect-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.educonnect-frontend.priority=10"
+        - "traefik.http.services.educonnect-frontend.loadbalancer.server.port=3000"
+
+  # 3. Banco de Dados
+  educonnect_db:
+    image: postgres:16-alpine
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [ node.role == manager ]
+      restart_policy:
+        condition: on-failure
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TZ=America/Sao_Paulo
+    volumes:
+      - educonnect_postgres_data_v2:/var/lib/postgresql/data
+    networks:
+      - interna_network_docs
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  educonnect_postgres_data_v2:
+  educonnect_uploads:
+
+networks:
+  SimpliSoft:
+    external: true
+  interna_network_docs:
+    driver: overlay
+    attachable: true

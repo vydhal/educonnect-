@@ -11,6 +11,7 @@ import projectRoutes from './routes/project.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import socialRoutes from './routes/social.routes.js';
 import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler.js';
@@ -43,6 +44,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/social', socialRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -54,7 +56,7 @@ app.use(errorHandler);
 
 // Start server
 app.listen(port, '0.0.0.0', () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
+  console.log(`✅ Server running on port ${port}`);
 });
 
 // Graceful shutdown

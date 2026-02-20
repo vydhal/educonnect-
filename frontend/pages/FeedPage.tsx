@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { postsAPI, authAPI, usersAPI } from '../api';
+import { postsAPI, authAPI, usersAPI, socialAPI } from '../api';
 import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
 import { Header } from '../components/Header';
@@ -13,6 +13,57 @@ interface FeedPost extends Post {
   images?: string[];
 }
 
+// Reusable Components
+const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
+        <h2 className="text-xl font-black">Criar Publicação</h2>
+        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
+      </div>
+      <div className="p-6 overflow-y-auto custom-scrollbar overflow-x-visible">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+const InteractionModal: React.FC<{ title: string, onClose: () => void, children: React.ReactNode }> = ({ title, onClose, children }) => (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[450px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+        <h2 className="text-lg font-black">{title}</h2>
+        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><span className="material-symbols-outlined">close</span></button>
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
+  </div>
+);
+
+const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?: string }> = ({ id, name, type, avatar }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div
+        onClick={() => navigate(`/profile/${id}`)}
+        className="flex items-center gap-3 min-w-0 cursor-pointer group"
+      >
+        <div
+          className="size-9 bg-gray-100 rounded-lg shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all"
+          style={{ backgroundImage: `url(${avatar || `https://ui-avatars.com/api/?name=${name}&background=random`})` }}
+        />
+        <div className="min-w-0">
+          <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{name}</p>
+          <p className="text-[10px] text-gray-500">{type}</p>
+        </div>
+      </div>
+      <button className="border-2 border-primary text-primary hover:bg-primary text-xs font-bold py-1 px-3 rounded-full transition-all hover:text-white">Seguir</button>
+    </div>
+  );
+};
+
 const FeedPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,11 +71,15 @@ const FeedPage: React.FC = () => {
   const [interactionModal, setInteractionModal] = useState<{ type: 'aplause' | 'comment' | 'send' | null, postId: string | null }>({ type: null, postId: null });
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [featuredSchools, setFeaturedSchools] = useState<any[]>([]);
 
   // Comments state
   const [activePostComments, setActivePostComments] = useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [recentVisitors, setRecentVisitors] = useState<any[]>([]);
+  const [trendingTags, setTrendingTags] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   // Time ago helper
   const timeAgo = (dateString: string) => {
@@ -73,12 +128,30 @@ const FeedPage: React.FC = () => {
     }
   };
 
+  const fetchFeaturedSchools = async () => {
+    try {
+      const data = await usersAPI.getFeaturedSchools();
+      setFeaturedSchools(data);
+    } catch (error) {
+      console.error('Failed to fetch featured schools', error);
+    }
+  };
+
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     fetchPosts();
+    fetchFeaturedSchools();
+    socialAPI.getTrendingTags().then(setTrendingTags).catch(console.error);
+    socialAPI.getEvents().then(setEvents).catch(console.error);
+
     authAPI.getProfile()
-      .then(profile => setUser(profile))
+      .then(profile => {
+        setUser(profile);
+        if (profile) {
+          socialAPI.getRecentVisitors().then(setRecentVisitors).catch(console.error);
+        }
+      })
       .catch(err => console.error('Failed to load profile', err));
   }, []);
 
@@ -217,8 +290,60 @@ const FeedPage: React.FC = () => {
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
               <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
               {user?.school && <p className="text-xs font-bold text-primary mt-1 text-center">{user.school}</p>}
+              <button
+                onClick={() => navigate(`/profile/${user?.id}`)}
+                className="mt-4 w-full py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20"
+              >
+                Ver Perfil Completo
+              </button>
             </div>
           </div>
+
+          {user && (
+            <div className="space-y-4 sticky top-[340px]">
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                <h3 className="font-bold text-xs mb-4 flex items-center gap-2 text-gray-400 uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-sm text-primary">visibility</span>
+                  Visitantes Recentes
+                </h3>
+                {recentVisitors.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {recentVisitors.map(visitor => (
+                      <div
+                        key={visitor.id}
+                        title={visitor.name}
+                        onClick={() => navigate(`/profile/${visitor.id}`)}
+                        className="size-10 rounded-xl bg-cover bg-center border border-gray-100 dark:border-gray-700 cursor-pointer hover:ring-2 ring-primary transition-all shadow-sm"
+                        style={{ backgroundImage: `url(${visitor.avatar || `https://ui-avatars.com/api/?name=${visitor.name}&background=random`})` }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-gray-400 text-center py-2 italic">Ninguém visitou seu perfil ainda.</p>
+                )}
+              </div>
+
+              {/* Tópicos Recentes Widget */}
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                <h3 className="font-bold text-xs mb-4 flex items-center gap-2 text-gray-400 uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-sm text-primary">tag</span>
+                  Tópicos Recentes
+                </h3>
+                <div className="space-y-3">
+                  {trendingTags.length > 0 ? (
+                    trendingTags.map(tag => (
+                      <button key={tag.name} className="flex items-center justify-between w-full group">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">#{tag.name}</span>
+                        <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-full">{tag.count} posts</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-[10px] text-gray-400 italic">Use hashtags nos seus posts!</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         {/* Feed */}
@@ -241,10 +366,19 @@ const FeedPage: React.FC = () => {
               <article key={post.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden">
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex gap-3">
-                    <div className="size-12 rounded-full bg-cover bg-center shrink-0 border" style={{ backgroundImage: `url(${post.authorAvatar})` }} />
+                    <div
+                      onClick={() => navigate(`/profile/${post.authorId}`)}
+                      className="size-12 rounded-full bg-cover bg-center shrink-0 border cursor-pointer hover:ring-2 ring-primary transition-all"
+                      style={{ backgroundImage: `url(${post.authorAvatar})` }}
+                    />
                     <div>
                       <div className="flex items-center gap-1">
-                        <h4 className="font-bold text-sm dark:text-white">{post.author}</h4>
+                        <h4
+                          onClick={() => navigate(`/profile/${post.authorId}`)}
+                          className="font-bold text-sm dark:text-white cursor-pointer hover:text-primary transition-colors"
+                        >
+                          {post.author}
+                        </h4>
                         {post.isVerified && <span className="material-symbols-outlined text-primary text-sm font-fill-1">verified</span>}
                       </div>
                       <p className="text-[11px] text-gray-500">{post.authorTitle} • {post.timestamp}</p>
@@ -304,12 +438,50 @@ const FeedPage: React.FC = () => {
             )))}
         </div>
 
-        {/* Right Widgets */}
         <aside className="lg:col-span-3 space-y-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border sticky top-20">
             <h3 className="font-bold text-sm mb-4">Escolas em destaque</h3>
-            <SchoolSuggest name="EMEF Solon de Lucena" type="Escola Municipal" />
-            <SchoolSuggest name="EMEF Vigário Calixto" type="Escola Municipal" />
+            <div className="space-y-4">
+              {featuredSchools.length > 0 ? (
+                featuredSchools.map(school => (
+                  <SchoolSuggest
+                    key={school.id}
+                    id={school.id}
+                    name={school.name}
+                    type={school.schoolType || 'Instituição'}
+                    avatar={school.avatar}
+                  />
+                ))
+              ) : (
+                <div className="text-xs text-gray-400 py-4 text-center">Nenhuma escola em destaque no momento.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Eventos da Semana Widget */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border sticky top-[340px]">
+            <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
+              Eventos da Semana
+              <span className="material-symbols-outlined text-primary text-sm">calendar_month</span>
+            </h3>
+            <div className="space-y-4">
+              {events.length > 0 ? (
+                events.map(event => (
+                  <div key={event.id} className="flex gap-3 group cursor-pointer" onClick={() => event.link && window.open(event.link, '_blank')}>
+                    <div className="size-12 shrink-0 bg-blue-50 dark:bg-primary/10 rounded-xl flex flex-col items-center justify-center p-1 border border-blue-100 dark:border-primary/20 group-hover:bg-primary group-hover:text-white transition-all">
+                      <span className="text-[10px] font-bold uppercase">{new Date(event.date).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                      <span className="text-lg font-black leading-none">{new Date(event.date).getDate()}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{event.name}</p>
+                      <p className="text-[10px] text-gray-500">{new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • {event.link ? 'Online' : 'Presencial'}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400 italic text-center py-4">Nenhum evento programado.</p>
+              )}
+            </div>
           </div>
         </aside>
       </main>
@@ -405,47 +577,5 @@ const FeedPage: React.FC = () => {
   );
 };
 
-// Reusable Components
-
-const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
-        <h2 className="text-xl font-black">Criar Publicação</h2>
-        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
-      </div>
-      <div className="p-6 overflow-y-auto custom-scrollbar overflow-x-visible">
-        {children}
-      </div>
-    </div>
-  </div>
-);
-
-const InteractionModal: React.FC<{ title: string, onClose: () => void, children: React.ReactNode }> = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[450px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-        <h2 className="text-lg font-black">{title}</h2>
-        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><span className="material-symbols-outlined">close</span></button>
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  </div>
-);
-
-const SchoolSuggest: React.FC<{ name: string, type: string }> = ({ name, type }) => (
-  <div className="flex items-center justify-between gap-2 mb-4">
-    <div className="flex items-center gap-3 min-w-0">
-      <div className="size-9 bg-gray-100 rounded-lg shrink-0 bg-cover bg-center border border-gray-100" style={{ backgroundImage: `url(https://picsum.photos/100?random=${name})` }} />
-      <div className="min-w-0">
-        <p className="text-xs font-bold truncate">{name}</p>
-        <p className="text-[10px] text-gray-500">{type}</p>
-      </div>
-    </div>
-    <button className="border-2 border-primary text-primary hover:bg-primary text-xs font-bold py-1 px-3 rounded-full transition-all hover:text-white">Seguir</button>
-  </div>
-);
 
 export default FeedPage;

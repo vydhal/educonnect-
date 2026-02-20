@@ -16,6 +16,8 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminReportsPage from './pages/AdminReportsPage';
 import AdminLayout from './components/AdminLayout';
 import AdminSchoolsPage from './pages/AdminSchoolsPage';
+import AdminEventsPage from './pages/AdminEventsPage';
+import PublicProfilePage from './pages/PublicProfilePage';
 import { SettingsProvider } from './contexts/SettingsContext';
 
 const App: React.FC = () => {
@@ -31,6 +33,7 @@ const App: React.FC = () => {
             <Route path="/register/:role" element={<RegistrationPage />} />
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/settings" element={<ProfileSettingsPage />} />
+            <Route path="/profile/:id" element={<PublicProfilePage />} />
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/admin" element={<AdminLayout />}>
@@ -39,6 +42,7 @@ const App: React.FC = () => {
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="schools" element={<AdminSchoolsPage />} />
+              <Route path="events" element={<AdminEventsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

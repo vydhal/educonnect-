@@ -649,4 +649,14 @@ router.post('/schools/import', authMiddleware, adminMiddleware, async (req: Auth
     }
 });
 
+// Download School Import Template
+router.get('/schools/template', (req: Request, res: Response) => {
+    const csvHeader = 'Name,Email,INEP,Zone,SchoolType,Address,Phone,Password\n';
+    const csvExample = 'EMEF Exemplo,contato@exemplo.edu.br,12345678,URBANA,ESCOLA,"Rua Exemplo, 123",83999999999,muda1234\n';
+
+    res.header('Content-Type', 'text/csv');
+    res.header('Content-Disposition', 'attachment; filename="modelo_importacao_escolas.csv"');
+    res.send(csvHeader + csvExample);
+});
+
 export default router;

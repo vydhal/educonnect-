@@ -47,7 +47,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                         ) : (
                             <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
                         )}
-                        <h2 className="text-xl font-black hidden lg:block text-[#0d121b] dark:text-white">{settings.APP_NAME || 'EduConnect CG'}</h2>
+                        <h2 className="text-xl font-black hidden lg:block text-[#0d121b] dark:text-white">
+                            {settings.APP_NAME || 'EduConnect CG'}
+                            <span className="text-[8px] align-top text-primary ml-1">(DEV)</span>
+                        </h2>
                     </div>
                 </div>
                 <nav className="flex gap-4 md:gap-8 items-center">
@@ -69,9 +72,17 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                     <button onClick={onLogout} title="Sair" className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                         <span className="material-symbols-outlined">logout</span>
                     </button>
-                    <div
+                    <button
                         onClick={() => navigate('/settings')}
-                        className="size-9 rounded-full bg-cover bg-center border border-gray-200 cursor-pointer hover:ring-2 ring-primary transition-all"
+                        title="Configurações"
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-primary transition-colors"
+                    >
+                        <span className="material-symbols-outlined">settings</span>
+                    </button>
+                    <div
+                        onClick={() => user?.id && navigate(`/profile/${user.id}`)}
+                        title="Ver meu perfil público"
+                        className="size-9 rounded-full bg-cover bg-center border border-gray-200 cursor-pointer hover:ring-2 ring-primary transition-all shrink-0"
                         style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }}
                     />
                 </div>

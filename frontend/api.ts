@@ -1,19 +1,19 @@
 // API client service
 // Determine API base URL - prioritize environment variable, then use port 5000 on current host
 const getApiUrl = () => {
-  // Check if VITE_API_URL is set in environment
   const envUrl = import.meta.env.VITE_API_URL;
+  const currentOrigin = window.location.origin;
+
+  // If we are on production domain but envUrl points to localhost, ignore envUrl
+  if (envUrl && envUrl.includes('localhost') && !currentOrigin.includes('localhost')) {
+    return `${currentOrigin}/api`;
+  }
+
   if (envUrl && envUrl.trim() !== '') {
-    console.log('Using VITE_API_URL:', envUrl);
     return envUrl;
   }
 
-  // Fallback: construct URL based on current host
-  const protocol = window.location.protocol; // http: or https:
-  const hostname = window.location.hostname; // localhost
-  const apiUrl = `${protocol}//${hostname}:5000/api`;
-  console.log('Using fallback API URL:', apiUrl);
-  return apiUrl;
+  return `${currentOrigin}/api`;
 };
 
 const API_URL = getApiUrl();
@@ -129,7 +129,9 @@ export const usersAPI = {
     }),
   getFollowers: (id: string) => request(`/users/${id}/followers`),
   getFollowing: (id: string) => request(`/users/${id}/following`),
-  searchUsers: (query: string) => request(`/users/search/${query}`),
+  getFeaturedSchools: () => request('/users/featured-schools'),
+  getUserProfile: (id: string) => request(`/users/${id}`),
+  searchUsers: (query: string) => request(`/users/search?q=${query}`),
 };
 
 // Moderation API
@@ -209,18 +211,36 @@ export const adminAPI = {
   // School Management
   getSchools: (query: string) => request(`/admin/schools?${query}`),
   createSchool: (data: any) => request('/admin/schools', { method: 'POST', body: JSON.stringify(data) }),
-  importSchools: async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/admin/schools/import`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    });
-    if (!response.ok) throw new Error('Falha na importação');
-    return response.json();
+  importSchools: (schools: any[]) => request('/admin/schools/import', {
+    method: 'POST',
+    body: JSON.stringify({ schools })
+  }),
+  downloadSchoolTemplate: () => {
+    window.location.href = `${API_URL}/admin/schools/template`;
   }
+};
+
+// Social API
+export const socialAPI = {
+  giveBadge: (receiverId: string, type: 'PROATIVO' | 'ESPECIAL' | 'HARMONIOSO') =>
+    request(`/social/badge/${receiverId}`, { method: 'POST', body: JSON.stringify({ type }) }),
+  getBadges: (userId: string) => request(`/social/badges/${userId}`),
+
+  recordProfileView: (profileId: string) => request(`/social/profile-view/${profileId}`, { method: 'POST' }),
+  getRecentVisitors: () => request('/social/profile-visitors'),
+
+  sendTestimonial: (receiverId: string, content: string) =>
+    request('/social/testimonial', { method: 'POST', body: JSON.stringify({ receiverId, content }) }),
+  getTestimonials: (userId: string) => request(`/social/testimonials/${userId}`),
+  getPendingTestimonials: () => request('/social/testimonials/pending'),
+  updateTestimonialStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
+    request(`/social/testimonial/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  getTrendingTags: () => request('/social/trending-tags'),
+  getEvents: () => request('/social/events'),
+  createEvent: (data: { name: string; date: string; link?: string }) =>
+    request('/social/events', { method: 'POST', body: JSON.stringify(data) }),
+  deleteEvent: (id: string) =>
+    request(`/social/events/${id}`, { method: 'DELETE' }),
 };
 
 export const uploadAPI = {

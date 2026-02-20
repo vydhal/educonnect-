@@ -49,6 +49,7 @@ const AdminLayout: React.FC = () => {
                     <SidebarItem icon="verified_user" label="Moderação" path="/admin/moderation" active={isActive('/admin/moderation')} />
                     <SidebarItem icon="group" label="Usuários" path="/admin/users" active={isActive('/admin/users')} />
                     <SidebarItem icon="school" label="Escolas" path="/admin/schools" active={isActive('/admin/schools')} />
+                    <SidebarItem icon="calendar_month" label="Eventos" path="/admin/events" active={isActive('/admin/events')} />
                     <SidebarItem icon="assessment" label="Relatórios" path="/admin/reports" active={isActive('/admin/reports')} />
                     <SidebarItem icon="settings" label="Configurações" path="/admin/settings" active={isActive('/admin/settings')} />
                 </nav>

@@ -208,7 +208,10 @@ const NetworkPage: React.FC = () => {
                 {items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())).map(item => (
                   <div key={item.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all group">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="size-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all overflow-hidden relative">
+                      <div
+                        onClick={() => navigate(`/profile/${item.id}`)}
+                        className="size-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all overflow-hidden relative cursor-pointer"
+                      >
                         {item.avatar ? (
                           <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${item.avatar})` }} />
                         ) : (
@@ -222,7 +225,13 @@ const NetworkPage: React.FC = () => {
                         {item.role === 'PROFESSOR' ? 'PROFESSOR' : (item.schoolType || 'ESCOLA')}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold mb-1 dark:text-white truncate" title={item.name}>{item.name}</h3>
+                    <h3
+                      onClick={() => navigate(`/profile/${item.id}`)}
+                      className="text-xl font-bold mb-1 dark:text-white truncate cursor-pointer hover:text-primary transition-colors"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </h3>
                     <p className="text-sm text-gray-500 flex items-center gap-1 mb-6">
                       <span className="material-symbols-outlined text-sm">location_on</span>
                       {item.school || 'Campina Grande'}
