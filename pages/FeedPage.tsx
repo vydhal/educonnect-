@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
 import { Post } from '../types';
+import { Header } from '../components/Header';
 
 const FeedPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [interactionModal, setInteractionModal] = useState<{type: 'aplause' | 'comment' | 'send' | null, postId: string | null}>({type: null, postId: null});
+  const [interactionModal, setInteractionModal] = useState<{ type: 'aplause' | 'comment' | 'send' | null, postId: string | null }>({ type: null, postId: null });
   const [postContent, setPostContent] = useState('');
-  
+
   const [posts, setPosts] = useState<Post[]>([
     {
       id: '1',
@@ -105,20 +106,20 @@ const FeedPage: React.FC = () => {
               </div>
               {post.image && <div className="w-full aspect-video bg-gray-100 bg-cover bg-center border-y dark:border-gray-800" style={{ backgroundImage: `url(${post.image})` }} />}
               <div className="grid grid-cols-3 p-1">
-                <button 
-                  onClick={() => setInteractionModal({type: 'aplause', postId: post.id})}
+                <button
+                  onClick={() => setInteractionModal({ type: 'aplause', postId: post.id })}
                   className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="material-symbols-outlined">volunteer_activism</span> Aplaudir
                 </button>
-                <button 
-                  onClick={() => setInteractionModal({type: 'comment', postId: post.id})}
+                <button
+                  onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
                   className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="material-symbols-outlined">chat</span> Comentar
                 </button>
-                <button 
-                  onClick={() => setInteractionModal({type: 'send', postId: post.id})}
+                <button
+                  onClick={() => setInteractionModal({ type: 'send', postId: post.id })}
                   className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="material-symbols-outlined">share</span> Enviar
@@ -140,9 +141,9 @@ const FeedPage: React.FC = () => {
 
       {/* MODALS */}
       {isModalOpen && <CreatePostModal onClose={() => setIsModalOpen(false)} content={postContent} setContent={setPostContent} onSubmit={handleCreatePost} />}
-      
+
       {interactionModal.type === 'aplause' && (
-        <InteractionModal title="Aplausos" onClose={() => setInteractionModal({type: null, postId: null})}>
+        <InteractionModal title="Aplausos" onClose={() => setInteractionModal({ type: null, postId: null })}>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="flex items-center justify-between">
@@ -161,7 +162,7 @@ const FeedPage: React.FC = () => {
       )}
 
       {interactionModal.type === 'comment' && (
-        <InteractionModal title="Comentários" onClose={() => setInteractionModal({type: null, postId: null})}>
+        <InteractionModal title="Comentários" onClose={() => setInteractionModal({ type: null, postId: null })}>
           <div className="space-y-4">
             <div className="max-h-[300px] overflow-y-auto space-y-4 pr-2">
               <div className="flex gap-3">
@@ -181,7 +182,7 @@ const FeedPage: React.FC = () => {
       )}
 
       {interactionModal.type === 'send' && (
-        <InteractionModal title="Enviar para" onClose={() => setInteractionModal({type: null, postId: null})}>
+        <InteractionModal title="Enviar para" onClose={() => setInteractionModal({ type: null, postId: null })}>
           <div className="grid grid-cols-2 gap-4">
             <button className="flex flex-col items-center gap-3 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all group">
               <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">chat_bubble</span>
@@ -198,35 +199,9 @@ const FeedPage: React.FC = () => {
   );
 };
 
-// Reusable Components
-export const Header: React.FC<{activeTab: 'home' | 'network' | 'projects', onLogout: () => void}> = ({ activeTab, onLogout }) => {
-  const navigate = useNavigate();
-  return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b px-6 py-3 shadow-sm">
-      <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-primary cursor-pointer" onClick={() => navigate('/')}>
-            <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
-            <h2 className="text-xl font-black hidden lg:block text-[#0d121b] dark:text-white">EduConnect CG</h2>
-          </div>
-        </div>
-        <nav className="flex gap-4 md:gap-8 items-center">
-          <NavIcon icon="home" label="Início" active={activeTab === 'home'} onClick={() => navigate('/feed')} />
-          <NavIcon icon="group" label="Rede" active={activeTab === 'network'} onClick={() => navigate('/network')} />
-          <NavIcon icon="school" label="Projetos" active={activeTab === 'projects'} onClick={() => navigate('/projects')} />
-        </nav>
-        <div className="flex items-center gap-3 border-l pl-4">
-          <button onClick={onLogout} title="Sair" className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-            <span className="material-symbols-outlined">logout</span>
-          </button>
-          <div className="size-9 rounded-full bg-cover bg-center border border-gray-200 cursor-pointer" style={{ backgroundImage: `url(${IMAGES.AVATAR_PROFESSOR})` }} />
-        </div>
-      </div>
-    </header>
-  );
-};
+// Reusable Components will be imported from their own files
 
-const CreatePostModal: React.FC<{onClose: () => void, content: string, setContent: (v: string) => void, onSubmit: () => void}> = ({ onClose, content, setContent, onSubmit }) => (
+const CreatePostModal: React.FC<{ onClose: () => void, content: string, setContent: (v: string) => void, onSubmit: () => void }> = ({ onClose, content, setContent, onSubmit }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -244,7 +219,7 @@ const CreatePostModal: React.FC<{onClose: () => void, content: string, setConten
   </div>
 );
 
-const InteractionModal: React.FC<{title: string, onClose: () => void, children: React.ReactNode}> = ({ title, onClose, children }) => (
+const InteractionModal: React.FC<{ title: string, onClose: () => void, children: React.ReactNode }> = ({ title, onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white dark:bg-gray-900 w-full max-w-[450px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -257,14 +232,7 @@ const InteractionModal: React.FC<{title: string, onClose: () => void, children: 
   </div>
 );
 
-const NavIcon: React.FC<{icon: string, label: string, active?: boolean, onClick: () => void}> = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 group ${active ? 'text-primary' : 'text-gray-500 hover:text-primary transition-colors'}`}>
-    <span className={`material-symbols-outlined ${active ? 'font-fill-1' : ''}`}>{icon}</span>
-    <span className="text-[10px] font-bold">{label}</span>
-  </button>
-);
-
-const SchoolSuggest: React.FC<{name: string, type: string}> = ({ name, type }) => (
+const SchoolSuggest: React.FC<{ name: string, type: string }> = ({ name, type }) => (
   <div className="flex items-center justify-between gap-2 mb-4">
     <div className="flex items-center gap-3 min-w-0">
       <div className="size-9 bg-gray-100 rounded-lg shrink-0 bg-cover bg-center border border-gray-100" style={{ backgroundImage: `url(https://picsum.photos/100?random=${name})` }} />

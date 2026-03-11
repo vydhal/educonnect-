@@ -70,7 +70,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
 // Auth API
 export const authAPI = {
-  register: (data: { email: string; password: string; name: string; role: string }) =>
+  register: (data: { email: string; password: string; name: string; role: string; schoolId?: string }) =>
     request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),

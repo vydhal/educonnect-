@@ -134,7 +134,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
       take: 50
     });
 
-    const formattedPosts = posts.map(post => ({
+    const formattedPosts = posts.map((post: any) => ({
       ...post,
       likes: post._count.likes,
       comments: post._count.comments,
@@ -221,13 +221,27 @@ router.post('/:id/like', authMiddleware, async (req: AuthenticatedRequest, res: 
     }
 
     // New Like
-    await prisma.like.create({
+    const like = await prisma.like.create({
       data: {
         postId: req.params.id,
         userId: req.userId,
         type: reactionType
       }
     });
+
+    // Notify post author if not liking own post
+    const postForLike = await prisma.post.findUnique({ where: { id: req.params.id }, select: { authorId: true } });
+    if (postForLike && postForLike.authorId !== req.userId) {
+      await prisma.notification.create({
+        data: {
+          type: 'POST_LIKE',
+          recipientId: postForLike.authorId,
+          senderId: req.userId,
+          relatedId: req.params.id,
+          content: `curtiu sua publicação`
+        }
+      }).catch((err: any) => console.error('Failed to create like notification', err));
+    }
 
     res.json({ liked: true, type: reactionType });
   } catch (error) {
@@ -264,6 +278,20 @@ router.post('/:id/comments', authMiddleware, async (req: AuthenticatedRequest, r
         }
       }
     });
+
+    // Notify post author if not commenting on own post
+    const postForComment = await prisma.post.findUnique({ where: { id: req.params.id }, select: { authorId: true } });
+    if (postForComment && postForComment.authorId !== req.userId) {
+      await prisma.notification.create({
+        data: {
+          type: 'POST_COMMENT',
+          recipientId: postForComment.authorId,
+          senderId: req.userId,
+          relatedId: req.params.id,
+          content: `comentou na sua publicação: "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}"`
+        }
+      }).catch((err: any) => console.error('Failed to create comment notification', err));
+    }
 
     res.status(201).json(comment);
   } catch (error) {

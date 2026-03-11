@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import socialRoutes from './routes/social.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler.js';
@@ -45,6 +46,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

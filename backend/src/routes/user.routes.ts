@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../server.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
+import { hashPassword } from '../utils/auth.js';
 
 const router = Router();
 
@@ -83,7 +84,7 @@ router.get('/featured-schools', async (req: AuthenticatedRequest, res: Response)
 
     // We can't easily count "likes received" across all posts in a single simple Prisma query without complex relations
     // Let's stick to posts, projects and followers for now
-    const rankedSchools = schools.map(school => ({
+    const rankedSchools = schools.map((school: any) => ({
       id: school.id,
       name: school.name,
       avatar: school.avatar,
@@ -91,7 +92,7 @@ router.get('/featured-schools', async (req: AuthenticatedRequest, res: Response)
       verified: school.verified,
       engagement: (school._count.posts * 1) + (school._count.projects * 3) + (school._count.followers * 1)
     }))
-      .sort((a, b) => b.engagement - a.engagement)
+      .sort((a: any, b: any) => b.engagement - a.engagement)
       .slice(0, 5);
 
     res.json(rankedSchools);
@@ -117,13 +118,6 @@ router.put('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
     // For now, we'll focus on the fields that exist in schema.
 
     if (password) {
-      // Dynamic import for hashPassword if not available in this scope, 
-      // OR better yet, we just import it at the top if we haven't already.
-      // Checking imports... hashPassword is NOT imported in the original file view.
-      // I will add the import in a separate block or assume it needs to be added.
-      // For safety, let's use the same bcrypt logic or import util.
-      // admin.routes.ts uses hashPassword from ../utils/auth.js
-      const { hashPassword } = await import('../utils/auth.js');
       updateData.password = await hashPassword(password);
     }
 
@@ -237,6 +231,17 @@ router.post('/:id/follow', authMiddleware, async (req: AuthenticatedRequest, res
       }
     });
 
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        type: 'FOLLOW',
+        recipientId: req.params.id,
+        senderId: req.userId,
+        relatedId: req.userId, // Próprio seguidor como ID relacionado
+        content: 'começou a te seguir'
+      }
+    }).catch(err => console.error('Failed to create follow notification', err));
+
     res.json({ following: true });
   } catch (error) {
     if (error instanceof AppError) {
@@ -259,7 +264,7 @@ router.get('/:id/followers', async (req: AuthenticatedRequest, res: Response) =>
       }
     });
 
-    res.json(followers.map(f => f.follower));
+    res.json(followers.map((f: any) => f.follower));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -277,7 +282,7 @@ router.get('/:id/following', async (req: AuthenticatedRequest, res: Response) =>
       }
     });
 
-    res.json(following.map(f => f.following));
+    res.json(following.map((f: any) => f.following));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

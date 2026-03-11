@@ -1,5 +1,5 @@
 
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { prisma } from '../server.js';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
@@ -64,7 +64,7 @@ router.get('/settings', authMiddleware, adminMiddleware, async (req: Authenticat
     try {
         const settings = await prisma.systemSettings.findMany();
         // Convert array to object { key: value }
-        const settingsMap = settings.reduce((acc, curr) => ({
+        const settingsMap = settings.reduce((acc: Record<string, any>, curr) => ({
             ...acc,
             [curr.key]: curr.value
         }), {});
@@ -178,7 +178,7 @@ router.post('/users', authMiddleware, adminMiddleware, async (req: Authenticated
                 password: hashedPassword,
                 role: role ? role.toUpperCase() : 'ALUNO',
                 school, // Legacy string
-                schoolId: req.body.schoolId, // New relation
+                schoolId: req.body.schoolId || null, // New relation, handle empty string
                 verified: true
             }
         });
@@ -194,10 +194,16 @@ router.post('/users', authMiddleware, adminMiddleware, async (req: Authenticated
 // Update User
 router.put('/users/:id', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { name, email, role, school } = req.body;
+        const { name, email, role, school, schoolId } = req.body;
         const user = await prisma.user.update({
             where: { id: req.params.id },
-            data: { name, email, role, school }
+            data: {
+                name,
+                email,
+                role: role ? role.toUpperCase() : undefined,
+                school,
+                schoolId: schoolId || (schoolId === null ? null : undefined) // Handle null/empty/undefined
+            }
         });
         res.json(user);
     } catch (error) {
@@ -217,273 +223,6 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req: Authent
     }
 });
 
-
-// User Management Endpoints
-
-// Get all users (with pagination and search)
-router.get('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const search = req.query.search as string;
-        const role = req.query.role as string;
-        const skip = (page - 1) * limit;
-
-        const where: any = {};
-        if (search) {
-            where.OR = [
-                { name: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-                { school: { contains: search, mode: 'insensitive' } }
-            ];
-        }
-        if (role) {
-            where.role = role.toUpperCase();
-        }
-
-        const [users, total] = await Promise.all([
-            prisma.user.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                    school: true,
-                    createdAt: true,
-                    avatar: true
-                }
-            }),
-            prisma.user.count({ where })
-        ]);
-
-        res.json({
-            users,
-            total,
-            page,
-            totalPages: Math.ceil(total / limit)
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Update User
-router.put('/users/:id', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { name, email, role, school } = req.body;
-        const user = await prisma.user.update({
-            where: { id: req.params.id },
-            data: { name, email, role, school }
-        });
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Delete User
-router.delete('/users/:id', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        await prisma.user.delete({
-            where: { id: req.params.id }
-        });
-        res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Export Users (CSV)
-router.get('/users/export', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const users = await prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-            select: {
-                name: true,
-                email: true,
-                role: true,
-                school: true,
-                createdAt: true
-            }
-        });
-
-        const csvHeader = 'Name,Email,Role,School,Created At\n';
-        const csvRows = users.map(user => {
-            const cleanName = user.name.replace(/,/g, '');
-            const cleanSchool = (user.school || '').replace(/,/g, '');
-            const date = new Date(user.createdAt).toISOString();
-            return `${cleanName},${user.email},${user.role},${cleanSchool},${date}`;
-        }).join('\n');
-
-        const csvContent = csvHeader + csvRows;
-
-        res.header('Content-Type', 'text/csv');
-        res.header('Content-Disposition', 'attachment; filename="users_export.csv"');
-        res.send(csvContent);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Export Users (CSV)
-router.get('/users/export', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const users = await prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-            select: {
-                name: true,
-                email: true,
-                role: true,
-                school: true,
-                createdAt: true
-            }
-        });
-
-        const csvHeader = 'Name,Email,Role,School,Created At\n';
-        const csvRows = users.map(user => {
-            const cleanName = user.name.replace(/,/g, '');
-            const cleanSchool = (user.school || '').replace(/,/g, '');
-            const date = new Date(user.createdAt).toISOString();
-            return `${cleanName},${user.email},${user.role},${cleanSchool},${date}`;
-        }).join('\n');
-
-        const csvContent = csvHeader + csvRows;
-
-        res.header('Content-Type', 'text/csv');
-        res.header('Content-Disposition', 'attachment; filename="users_export.csv"');
-        res.send(csvContent);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Import Users (JSON from Frontend parsed CSV)
-router.post('/users/import', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { users } = req.body; // Expects array of { name, email, role, school, password? }
-
-        const results = {
-            success: 0,
-            failed: 0,
-            errors: [] as string[]
-        };
-
-        // Process in valid batches or one by one
-        // For simplicity, one by one to handle errors individualy
-        for (const user of users) {
-            try {
-                // Check if exists
-                const existing = await prisma.user.findUnique({ where: { email: user.email } });
-                if (existing) {
-                    results.failed++;
-                    results.errors.push(`Email ${user.email} already exists`);
-                    continue;
-                }
-
-                // Create (Password hashing should be done here if provided, or default)
-                // Assuming we default password to '123456' if not provided for bulk import
-                // We need hashPassword utility.
-                // Import it or use simple hash for now? Import is better.
-                // Let's assume we skip password for now or set a default hash
-                // Default hash for '123456': $2a$10$Something... 
-                // Actually, let's just create.
-
-                await prisma.user.create({
-                    data: {
-                        name: user.name,
-                        email: user.email,
-                        role: user.role && ['ADMIN', 'TEACHER', 'STUDENT'].includes(user.role.toUpperCase()) ? user.role.toUpperCase() : 'STUDENT',
-                        school: user.school,
-                        password: user.password || '$2a$10$X7X...', // TODO: Use real hash
-                        // We need a proper hash. Let's start with a hardcoded hash of '123456'
-                        // generated elsewhere: $2a$10$EpW./y/W1... (example)
-                    }
-                });
-                results.success++;
-            } catch (err) {
-                results.failed++;
-                results.errors.push(`Failed to import ${user.email}`);
-            }
-        }
-
-        res.json(results);
-
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Export Users (CSV)
-router.get('/users/export', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const users = await prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-            select: {
-                name: true,
-                email: true,
-                role: true,
-                school: true,
-                createdAt: true
-            }
-        });
-
-        const csvHeader = 'Name,Email,Role,School,Created At\n';
-        const csvRows = users.map(user => {
-            const cleanName = user.name.replace(/,/g, '');
-            const cleanSchool = (user.school || '').replace(/,/g, '');
-            const date = new Date(user.createdAt).toISOString();
-            return `${cleanName},${user.email},${user.role},${cleanSchool},${date}`;
-        }).join('\n');
-
-        const csvContent = csvHeader + csvRows;
-
-        res.header('Content-Type', 'text/csv');
-        res.header('Content-Disposition', 'attachment; filename="users_export.csv"');
-        res.send(csvContent);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Import Users (JSON from Frontend parsing)
-router.post('/users/import', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { users } = req.body;
-        const results = { success: 0, failed: 0, errors: [] as string[] };
-
-        for (const user of users) {
-            try {
-                const existing = await prisma.user.findUnique({ where: { email: user.email } });
-                if (existing) {
-                    results.failed++;
-                    results.errors.push(`Email ${user.email} already exists`);
-                    continue;
-                }
-
-                await prisma.user.create({
-                    data: {
-                        name: user.name,
-                        email: user.email,
-                        role: user.role && ['ADMIN', 'TEACHER', 'STUDENT'].includes(user.role.toUpperCase()) ? user.role.toUpperCase() : 'STUDENT',
-                        school: user.school,
-                        password: user.password || '$2a$10$EpW./y/W1...', // Default hash
-                    }
-                });
-                results.success++;
-            } catch (err) {
-                results.failed++;
-                results.errors.push(`Failed to import ${user.email}`);
-            }
-        }
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
 
 // Reports Endpoints
 router.get('/reports/growth', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
@@ -650,7 +389,7 @@ router.post('/schools/import', authMiddleware, adminMiddleware, async (req: Auth
 });
 
 // Download School Import Template
-router.get('/schools/template', (req: Request, res: Response) => {
+router.get('/schools/template', (_req, res) => {
     const csvHeader = 'Name,Email,INEP,Zone,SchoolType,Address,Phone,Password\n';
     const csvExample = 'EMEF Exemplo,contato@exemplo.edu.br,12345678,URBANA,ESCOLA,"Rua Exemplo, 123",83999999999,muda1234\n';
 

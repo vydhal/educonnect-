@@ -49,10 +49,29 @@ model User {
   testimonialsSent     Testimonial[] @relation("testimonialSender")
   testimonialsReceived Testimonial[] @relation("testimonialReceiver")
  
+  // Notifications
+  notificationsReceived Notification[] @relation("recipientNotifications")
+  notificationsSent     Notification[] @relation("senderNotifications")
+
   // School-Teacher Relation
   schoolId  String?
   worksAt   User?   @relation("SchoolTeachers", fields: [schoolId], references: [id])
   teachers  User[]  @relation("SchoolTeachers")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // 'FOLLOW', 'BADGE', 'TESTIMONIAL', 'POST_LIKE', 'POST_COMMENT'
+  recipientId String
+  recipient   User     @relation("recipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  senderId    String?
+  sender      User?    @relation("senderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  relatedId   String?  // ID do objeto relacionado (postId, testimonialId, etc.)
+  content     String?  // Texto opcional
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([recipientId])
 }
 
 model UserFollow {

@@ -12,7 +12,7 @@ const router = Router();
 // Register
 router.post('/register', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, schoolId } = req.body;
 
     if (!email || !password || !name || !role) {
       throw new AppError('Missing required fields', 400);
@@ -30,7 +30,8 @@ router.post('/register', async (req: AuthenticatedRequest, res: Response) => {
         email,
         password: hashedPassword,
         name,
-        role
+        role,
+        schoolId
       }
     });
 

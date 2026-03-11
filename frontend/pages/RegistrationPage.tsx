@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
-import { authAPI, setAuthToken } from '../api';
+import { authAPI, setAuthToken, usersAPI } from '../api';
 
 const RegistrationPage: React.FC = () => {
   const { role } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [schools, setSchools] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,12 +17,25 @@ const RegistrationPage: React.FC = () => {
     confirmPassword: '',
     cpf: '',
     phone: '',
+    schoolId: '',
   });
+
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const data = await usersAPI.getUsers('ESCOLA');
+        setSchools(data);
+      } catch (err) {
+        console.error('Failed to fetch schools:', err);
+      }
+    };
+    fetchSchools();
+  }, []);
 
   const title = role === 'aluno' ? 'Crie sua conta de Aluno' : 'Cadastro de Professor';
   const icon = role === 'aluno' ? 'person' : 'school';
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -42,7 +56,8 @@ const RegistrationPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
         name: formData.name,
-        role: (role as 'ALUNO' | 'PROFESSOR' | 'ADMIN') || 'ALUNO'
+        role: (role as 'ALUNO' | 'PROFESSOR' | 'ADMIN') || 'ALUNO',
+        schoolId: role === 'professor' ? formData.schoolId : undefined
       });
 
       if (response.token && response.user) {
@@ -112,57 +127,82 @@ const RegistrationPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-sm font-bold text-gray-700">Nome Completo</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="Ex: Maria José da Silva" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="Ex: Maria José da Silva"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">Email</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="seu.email@educonnect.com" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="seu.email@educonnect.com"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">CPF</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     type="text"
                     name="cpf"
                     value={formData.cpf}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="000.000.000-00" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="000.000.000-00"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">Telefone</label>
-                  <input 
+                  <input
                     type="text"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="(83) 90000-0000" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="(83) 90000-0000"
                   />
                 </div>
               </div>
             </section>
+
+            {role === 'professor' && (
+              <section className="pt-10 border-t">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary text-2xl">corporate_fare</span>
+                  Vínculo Institucional
+                </h3>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Selecione sua Escola</label>
+                  <select
+                    name="schoolId"
+                    value={formData.schoolId}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                  >
+                    <option value="">Selecione a unidade que você atua</option>
+                    {schools.map((school: any) => (
+                      <option key={school.id} value={school.id}>{school.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </section>
+            )}
 
             <section className="pt-10 border-t">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
@@ -172,28 +212,28 @@ const RegistrationPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">Senha</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="Sua senha segura" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="Sua senha segura"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">Confirmar Senha</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     type="password"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     disabled={loading}
-                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50" 
-                    placeholder="Confirme sua senha" 
+                    className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl px-4 border-2 disabled:opacity-50"
+                    placeholder="Confirme sua senha"
                   />
                 </div>
               </div>
@@ -204,7 +244,7 @@ const RegistrationPage: React.FC = () => {
                 Ao continuar, você concorda com nossos <a className="text-primary hover:underline" href="#">Termos de Uso</a> e <a className="text-primary hover:underline" href="#">Política de Privacidade</a>.
               </p>
               <div className="flex gap-4 w-full md:w-auto">
-                <button 
+                <button
                   type="button"
                   onClick={() => navigate(-1)}
                   disabled={loading}
@@ -212,7 +252,7 @@ const RegistrationPage: React.FC = () => {
                 >
                   Voltar
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 md:flex-none px-12 py-4 bg-primary text-white font-bold rounded-xl shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -233,7 +273,7 @@ const RegistrationPage: React.FC = () => {
             <img src={IMAGES.PREFEITURA_LOGO} className="h-12" alt="Prefeitura" />
             <div className="h-8 w-px bg-gray-400"></div>
             <div className="text-left font-bold uppercase text-[10px] leading-tight">
-              Secretaria de<br/>Educação
+              Secretaria de<br />Educação
             </div>
           </div>
         </footer>

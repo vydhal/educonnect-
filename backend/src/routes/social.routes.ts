@@ -32,13 +32,24 @@ router.post('/badge/:receiverId', authMiddleware, async (req: AuthenticatedReque
                     type
                 }
             },
-            update: {}, // If exists, do nothing or update timestamp if we had one
+            update: {},
             create: {
                 giverId,
                 receiverId,
                 type
             }
         });
+
+        // Create notification for badge
+        await prisma.notification.create({
+            data: {
+                type: 'BADGE',
+                recipientId: receiverId,
+                senderId: giverId,
+                relatedId: badge.id,
+                content: `te deu um selo de ${type.toLowerCase()}`
+            }
+        }).catch((err: any) => console.error('Failed to create badge notification', err));
 
         res.status(201).json(badge);
     } catch (error) {
@@ -59,9 +70,9 @@ router.get('/badges/:userId', async (req: AuthenticatedRequest, res: Response) =
         });
 
         const counts = {
-            PROATIVO: badges.find(b => b.type === 'PROATIVO')?._count.id || 0,
-            ESPECIAL: badges.find(b => b.type === 'ESPECIAL')?._count.id || 0,
-            HARMONIOSO: badges.find(b => b.type === 'HARMONIOSO')?._count.id || 0,
+            PROATIVO: badges.find((b: any) => b.type === 'PROATIVO')?._count.id || 0,
+            ESPECIAL: badges.find((b: any) => b.type === 'ESPECIAL')?._count.id || 0,
+            HARMONIOSO: badges.find((b: any) => b.type === 'HARMONIOSO')?._count.id || 0,
         };
 
         res.json(counts);
@@ -78,10 +89,8 @@ router.post('/profile-view/:profileId', authMiddleware, async (req: Authenticate
         const viewerId = req.userId!;
         const profileId = req.params.profileId;
 
-        if (viewerId === profileId) return res.send(); // Don't count own views
+        if (viewerId === profileId) return res.send();
 
-        // Simple view recording, maybe limit to one per 24h?
-        // For high engagement, let's just record it.
         await prisma.profileView.create({
             data: {
                 viewerId,
@@ -116,7 +125,7 @@ router.get('/profile-visitors', authMiddleware, async (req: AuthenticatedRequest
             }
         });
 
-        res.json(visitors.map(v => v.viewer));
+        res.json(visitors.map((v: any) => v.viewer));
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -134,7 +143,6 @@ router.post('/testimonial', authMiddleware, async (req: AuthenticatedRequest, re
             return res.status(400).json({ error: 'Content and receiverId are required' });
         }
 
-        console.log('BACKEND: Creating testimonial', { senderId, receiverId, content });
         const testimonial = await prisma.testimonial.create({
             data: {
                 content,
@@ -143,6 +151,17 @@ router.post('/testimonial', authMiddleware, async (req: AuthenticatedRequest, re
                 status: 'PENDING'
             }
         });
+
+        // Create notification for testimonial
+        await prisma.notification.create({
+            data: {
+                type: 'TESTIMONIAL',
+                recipientId: receiverId,
+                senderId: senderId,
+                relatedId: testimonial.id,
+                content: 'te enviou um novo depoimento para aprovação'
+            }
+        }).catch((err: any) => console.error('Failed to create testimonial notification', err));
 
         res.status(201).json(testimonial);
     } catch (error) {
@@ -154,7 +173,6 @@ router.post('/testimonial', authMiddleware, async (req: AuthenticatedRequest, re
 router.get('/testimonials/pending', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.userId!;
-        console.log('BACKEND: Fetching pending testimonials for user:', userId);
         const pending = await prisma.testimonial.findMany({
             where: {
                 receiverId: userId,
@@ -170,7 +188,6 @@ router.get('/testimonials/pending', authMiddleware, async (req: AuthenticatedReq
                 }
             }
         });
-        console.log('BACKEND: Found pending testimonials:', pending.length);
         res.json(pending);
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -181,8 +198,6 @@ router.get('/testimonials/pending', authMiddleware, async (req: AuthenticatedReq
 router.get('/testimonials/:userId', async (req, res: Response) => {
     try {
         const { userId } = req.params;
-        // Optimization: If userId is 'pending', the previous route should have caught it, 
-        // but let's be safe and return early if it somehow reaches here to avoid queries with 'pending' as ID
         if (userId === 'pending') return res.json([]);
 
         const testimonials = await prisma.testimonial.findMany({
@@ -212,7 +227,7 @@ router.get('/testimonials/:userId', async (req, res: Response) => {
 router.put('/testimonial/:id/status', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { status } = req.body; // 'APPROVED' | 'REJECTED'
+        const { status } = req.body;
         const userId = req.userId!;
 
         if (!['APPROVED', 'REJECTED'].includes(status)) {
@@ -239,7 +254,6 @@ router.put('/testimonial/:id/status', authMiddleware, async (req: AuthenticatedR
 
 router.get('/trending-tags', async (req, res: Response) => {
     try {
-        // Simple implementation: count hashtags in the last 100 posts
         const posts = await prisma.post.findMany({
             take: 100,
             orderBy: { createdAt: 'desc' },
@@ -247,8 +261,8 @@ router.get('/trending-tags', async (req, res: Response) => {
         });
 
         const tagCounts: { [key: string]: number } = {};
-        posts.forEach(post => {
-            post.tags.forEach(tag => {
+        posts.forEach((post: any) => {
+            post.tags.forEach((tag: string) => {
                 tagCounts[tag] = (tagCounts[tag] || 0) + 1;
             });
         });
@@ -272,7 +286,7 @@ router.get('/events', async (req, res: Response) => {
         const events = await prisma.weeklyEvent.findMany({
             where: {
                 date: {
-                    gte: new Date() // Only future events
+                    gte: new Date()
                 }
             },
             orderBy: { date: 'asc' },
@@ -287,7 +301,8 @@ router.get('/events', async (req, res: Response) => {
 // Create event (Admin only)
 router.post('/events', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        if (req.userRole !== 'ADMIN') {
+        const user = await prisma.user.findUnique({ where: { id: req.userId } });
+        if (user?.role !== 'ADMIN') {
             return res.status(403).json({ error: 'Only admins can create events' });
         }
 
@@ -313,7 +328,8 @@ router.post('/events', authMiddleware, async (req: AuthenticatedRequest, res: Re
 // Delete event (Admin only)
 router.delete('/events/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        if (req.userRole !== 'ADMIN') {
+        const user = await prisma.user.findUnique({ where: { id: req.userId } });
+        if (user?.role !== 'ADMIN') {
             return res.status(403).json({ error: 'Only admins can delete events' });
         }
 

@@ -115,29 +115,6 @@ const AdminUsersPage: React.FC = () => {
         }
     };
 
-    // ... existing code ...
-
-    <div>
-        <label className="block text-sm font-bold mb-1.5 text-gray-700">Senha Provisória</label>
-        <div className="relative">
-            <input
-                required
-                type={showPassword ? 'text' : 'password'}
-                value={newUser.password}
-                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none pr-10"
-            />
-            <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-                <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility' : 'visibility_off'}</span>
-            </button>
-        </div>
-    </div>
-
-    // ... existing code ...
 
     {/* Edit Modal (Reused styles) */ }
     {

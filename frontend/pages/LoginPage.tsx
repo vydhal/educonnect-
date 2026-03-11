@@ -9,8 +9,8 @@ import { useSettings } from '../contexts/SettingsContext';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
-  const [email, setEmail] = useState('admin@educonnect.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

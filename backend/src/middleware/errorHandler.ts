@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export interface AuthenticatedRequest extends Request<any, any, any, any> {
   userId?: string;
   userRole?: string;
+  [key: string]: any; // Permite body, query, params etc mesmo se o IntelliSense falhar
 }
 
 export class AppError extends Error {

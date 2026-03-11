@@ -10,7 +10,6 @@ const ProfileSelectionPage: React.FC = () => {
   const profiles = [
     { role: 'PROFESSOR' as UserRole, icon: 'person_search', label: 'Professor', desc: 'Educadores e coordenadores pedagógicos' },
     { role: 'ALUNO' as UserRole, icon: 'school', label: 'Aluno', desc: 'Estudantes da rede municipal' },
-    { role: 'ESCOLA' as UserRole, icon: 'corporate_fare', label: 'Escola', desc: 'Gestão institucional e administrativa' },
     { role: 'COMUNIDADE' as UserRole, icon: 'groups', label: 'Comunidade', desc: 'Pais, responsáveis e parceiros externos' },
   ];
 
@@ -53,8 +52,8 @@ const ProfileSelectionPage: React.FC = () => {
             disabled={!selected || selected === 'ALUNO' || selected === 'COMUNIDADE'}
             onClick={() => navigate(`/register/${selected?.toLowerCase()}`)}
             className={`min-w-[280px] h-14 rounded-xl font-bold text-lg shadow-lg transition-all ${selected && selected !== 'ALUNO' && selected !== 'COMUNIDADE'
-                ? 'bg-primary text-white shadow-primary/25 active:scale-95'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-primary text-white shadow-primary/25 active:scale-95'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
           >
             {selected === 'ALUNO' || selected === 'COMUNIDADE' ? 'Em Breve' : 'Continuar'}
