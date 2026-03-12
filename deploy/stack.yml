@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. Backend API
   backend:
-    image: vydhal/educonnect-backend:1.0.4
+    image: vydhal/educonnect-backend:1.0.6
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -36,7 +36,7 @@ services:
 
   # 2. Frontend
   frontend:
-    image: vydhal/educonnect-frontend:1.0.4
+    image: vydhal/educonnect-frontend:1.0.6
     environment:
       - TZ=America/Sao_Paulo
     networks:

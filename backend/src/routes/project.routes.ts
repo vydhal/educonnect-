@@ -232,6 +232,56 @@ router.post('/:id/comments', authMiddleware, async (req: AuthenticatedRequest, r
   }
 });
 
+// Update project
+router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, description, content, image, images, attachments, etapa, componente, category } = req.body;
+    const projectId = req.params.id;
+    const userId = req.userId!;
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId }
+    });
+
+    if (!project) {
+      throw new AppError('Project not found', 404);
+    }
+
+    if (project.authorId !== userId && req.userRole !== 'ADMIN') {
+      throw new AppError('Not authorized', 403);
+    }
+
+    const updatedProject = await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        title: title || undefined,
+        description: description || undefined,
+        content: content || undefined,
+        image: image !== undefined ? image : undefined,
+        images: images || undefined,
+        attachments: attachments || undefined,
+        etapa: etapa || undefined,
+        componente: componente || undefined,
+        category: category || undefined,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true, role: true }
+        }
+      }
+    });
+
+    res.json(updatedProject);
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      console.error('Error updating project:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
 // Delete project
 router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {

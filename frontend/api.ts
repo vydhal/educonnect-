@@ -169,6 +169,11 @@ export const projectsAPI = {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
+  updateProject: (id: string, data: any) =>
+    request(`/projects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
   deleteProject: (id: string) =>
     request(`/projects/${id}`, {
       method: 'DELETE',

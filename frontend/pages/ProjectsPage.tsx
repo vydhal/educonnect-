@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
-import { projectsAPI, uploadAPI, postsAPI } from '../api';
+import { projectsAPI, uploadAPI, postsAPI, authAPI } from '../api';
 import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnUnderline, BtnLink, BtnStrikeThrough, BtnNumberedList, BtnBulletList, BtnClearFormatting } from 'react-simple-wysiwyg';
 
 const ETAPAS = {
@@ -23,6 +23,9 @@ const ProjectsPage: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [commentContent, setCommentContent] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -52,27 +55,42 @@ const ProjectsPage: React.FC = () => {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      const profile = await authAPI.getProfile();
+      setUser(profile);
+    } catch (error) {
+      console.error('Erro ao buscar perfil:', error);
+    }
+  };
+
   useEffect(() => {
+    fetchProfile();
     fetchProjects();
   }, [activeEtapa, activeComponente]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const project = await projectsAPI.createProject(formData);
-
-      // Postar no Feed automaticamente
-      try {
-        await postsAPI.createPost({
-          content: `🚀 Publiquei uma nova inspiração: **${formData.title}**\n\n${formData.description}\n\nConfira em "Ideais que Inspiram"!`,
-          image: formData.image || undefined,
-          images: formData.images.length > 0 ? formData.images : undefined
-        });
-      } catch (feedErr) {
-        console.error('Falha ao postar no feed:', feedErr);
+      if (isEditing && editingId) {
+        await projectsAPI.updateProject(editingId, formData);
+      } else {
+        const project = await projectsAPI.createProject(formData);
+        // Postar no Feed automaticamente (apenas na criação)
+        try {
+          await postsAPI.createPost({
+            content: `🚀 Publiquei uma nova inspiração: **${formData.title}**\n\n${formData.description}\n\nConfira em "Ideais que Inspiram"!`,
+            image: formData.image || undefined,
+            images: formData.images.length > 0 ? formData.images : undefined
+          });
+        } catch (feedErr) {
+          console.error('Falha ao postar no feed:', feedErr);
+        }
       }
 
       setIsSubmitOpen(false);
+      setIsEditing(false);
+      setEditingId(null);
       fetchProjects();
       setFormData({
         title: '',
@@ -143,6 +161,31 @@ const ProjectsPage: React.FC = () => {
       setIsDetailOpen(true);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleEdit = (project: any) => {
+    setFormData({
+      title: project.title,
+      description: project.description,
+      content: project.content || '',
+      etapa: project.etapa || 'ANOS_INICIAIS',
+      componente: project.componente || 'Matemática',
+      image: project.image || '',
+      images: project.images || []
+    });
+    setEditingId(project.id);
+    setIsEditing(true);
+    setIsSubmitOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta inspiração?')) return;
+    try {
+      await projectsAPI.deleteProject(id);
+      fetchProjects();
+    } catch (error) {
+      alert('Erro ao excluir');
     }
   };
 
@@ -236,9 +279,27 @@ const ProjectsPage: React.FC = () => {
                   )}
                   <div className="absolute top-4 left-4 flex gap-2">
                     <span className="px-3 py-1 bg-white/90 backdrop-blur rounded-lg text-[10px] font-black uppercase tracking-wider text-primary shadow-sm">
-                      {project.etapa.replace('_', ' ')}
+                      {project.etapa?.replace('_', ' ') || 'Geral'}
                     </span>
                   </div>
+                  {user && (project.authorId === user.id || user.role === 'ADMIN') && (
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <button
+                        onClick={() => handleEdit(project)}
+                        className="size-8 bg-white/90 hover:bg-primary hover:text-white backdrop-blur rounded-lg flex items-center justify-center text-gray-600 transition-all shadow-sm"
+                        title="Editar"
+                      >
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(project.id)}
+                        className="size-8 bg-white/90 hover:bg-red-500 hover:text-white backdrop-blur rounded-lg flex items-center justify-center text-gray-600 transition-all shadow-sm"
+                        title="Excluir"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div
@@ -263,6 +324,11 @@ const ProjectsPage: React.FC = () => {
                   <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed">
                     {project.description}
                   </p>
+
+                  <div className="flex items-center gap-2 text-primary font-black text-xs group-hover:gap-4 transition-all">
+                    <span>LER INSPIRAÇÃO COMPLETA</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </div>
 
                   <div className="mt-auto pt-6 border-t dark:border-gray-800 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -299,8 +365,8 @@ const ProjectsPage: React.FC = () => {
           <div className="relative bg-white dark:bg-gray-900 w-full max-w-[1000px] rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
             <div className="px-10 py-8 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
               <div>
-                <h2 className="text-3xl font-black">Escrever Inspiração</h2>
-                <p className="text-sm text-gray-500">Inspire outros professores com sua prática pedagógia.</p>
+                <h2 className="text-3xl font-black">{isEditing ? 'Editar Inspiração' : 'Escrever Inspiração'}</h2>
+                <p className="text-sm text-gray-500">{isEditing ? 'Atualize sua prática pedagógica.' : 'Inspire outros professores com sua prática pedagógia.'}</p>
               </div>
               <button onClick={() => setIsSubmitOpen(false)} className="size-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined text-gray-400">close</span></button>
             </div>
@@ -430,7 +496,7 @@ const ProjectsPage: React.FC = () => {
                 onClick={handleSubmit}
                 className="bg-primary text-white font-black px-12 py-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
               >
-                Publicar Inspiração
+                {isEditing ? 'Salvar Alterações' : 'Publicar Inspiração'}
               </button>
             </div>
           </div>
@@ -451,7 +517,7 @@ const ProjectsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-10 space-y-12">
+            <div className="flex-1 overflow-y-auto p-10 flex flex-col gap-12">
               <div className="flex items-center gap-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl">
                 <img src={selectedProject.author.avatar || `https://ui-avatars.com/api/?name=${selectedProject.author.name}`} className="size-12 rounded-full" alt="" />
                 <div>
