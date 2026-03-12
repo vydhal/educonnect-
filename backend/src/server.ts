@@ -1,5 +1,4 @@
 import express, { Express } from 'express';
-// @ts-ignore
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
@@ -20,6 +19,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 dotenv.config();
 
 const app: Express = express();
+app.enable('trust proxy');
 const port = parseInt(process.env.PORT || '5000', 10);
 
 // Initialize Prisma

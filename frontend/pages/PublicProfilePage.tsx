@@ -146,7 +146,7 @@ const PublicProfilePage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
-            <Header activeTab="" onLogout={() => navigate('/login')} user={currentUser} />
+            <Header activeTab="network" onLogout={() => navigate('/login')} user={currentUser} />
 
             <main className="max-w-[1200px] w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
 

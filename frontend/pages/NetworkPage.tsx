@@ -57,7 +57,7 @@ const NetworkPage: React.FC = () => {
         } else {
           // Fetch Schools
           // Filter by schoolType if needed
-          let typeParam = 'ESCOLA'; // Role
+          const typeParam = 'ESCOLA'; // Role
           if (filterType !== 'TODAS' && filterType !== 'ESCOLA' && filterType !== 'CRECHE') {
             // Should not happen based on tabs, but safety
           }

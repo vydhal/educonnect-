@@ -197,6 +197,9 @@ async function main() {
     data: {
       title: 'Horta Escolar Sustentável',
       description: 'Projeto de criação de uma horta orgânica na escola, promovendo educação ambiental e produção de alimentos saudáveis.',
+      content: '<p>Nossa horta escolar é um projeto interdiciplinar que envolve alunos do 6º ao 9º ano...</p>',
+      etapa: 'ANOS_FINAIS',
+      componente: 'Ciências',
       category: 'Sustentabilidade',
       image: 'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=600',
       authorId: escola.id
@@ -207,6 +210,9 @@ async function main() {
     data: {
       title: 'Ciência em 3D',
       description: 'Utilização de impressoras 3D para criar modelos científicos interativos e facilitar o aprendizado de conceitos complexos.',
+      content: '<h2>Aprendizado Imersivo</h2><p>Com o uso da tecnologia 3D, transformamos a sala de aula em um laboratório de inovação.</p>',
+      etapa: 'ANOS_INICIAIS',
+      componente: 'Matemática',
       category: 'Tecnologia',
       image: 'https://images.unsplash.com/photo-1550355291-bbee04a92027?w=600',
       authorId: professor.id
@@ -217,6 +223,9 @@ async function main() {
     data: {
       title: 'Clube de Programação',
       description: 'Clube onde alunos aprendem linguagens de programação e desenvolvem aplicativos reais para resolver problemas da comunidade.',
+      content: '<h3>Código para Todos</h3><p>O clube de programação visa democratizar o acesso à tecnologia e lógica de programação.</p>',
+      etapa: 'ANOS_FINAIS',
+      componente: 'Matemática',
       category: 'Programação',
       image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600',
       authorId: professor2.id

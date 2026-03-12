@@ -55,9 +55,7 @@ router.post('/', upload.single('file'), (req: Request, res: Response) => {
 
         // Dynamic base URL would be better but let's assume relative path returned to client
         // Client or Server can prepend host. Returning relative path is safer.
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        const fileUrl = `/uploads/${req.file.filename}`;
 
         res.json({
             message: 'File uploaded successfully',

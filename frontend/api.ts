@@ -153,16 +153,22 @@ export const moderationAPI = {
     }),
 };
 
-// Projects API
+// Projects API (Ideais que Inspiram)
 export const projectsAPI = {
-  getProjects: () => request('/projects'),
+  getProjects: (params: string = '') => request(`/projects${params ? `?${params}` : ''}`),
   getProject: (id: string) => request(`/projects/${id}`),
-  createProject: (data: { title: string; description: string; image?: string; category?: string }) =>
+  createProject: (data: any) =>
     request('/projects', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  getByCategory: (category: string) => request(`/projects/category/${category}`),
+  like: (id: string) => request(`/projects/${id}/like`, { method: 'POST' }),
+  favorite: (id: string) => request(`/projects/${id}/favorite`, { method: 'POST' }),
+  addComment: (id: string, content: string) =>
+    request(`/projects/${id}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
   deleteProject: (id: string) =>
     request(`/projects/${id}`, {
       method: 'DELETE',
