@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { socialAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 interface WeeklyEvent {
     id: string;
@@ -12,6 +13,7 @@ interface WeeklyEvent {
 const AdminEventsPage: React.FC = () => {
     const [events, setEvents] = useState<WeeklyEvent[]>([]);
     const [loading, setLoading] = useState(true);
+    const { showModal } = useModal();
     const [isCreating, setIsCreating] = useState(false);
     const [newEvent, setNewEvent] = useState({
         name: '',
@@ -42,22 +44,30 @@ const AdminEventsPage: React.FC = () => {
             setIsCreating(false);
             setNewEvent({ name: '', date: '', link: '' });
             fetchEvents();
-            alert('Evento criado com sucesso!');
+            showModal({ title: 'Sucesso', message: 'Evento criado com sucesso e já está visível no feed!', type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao criar evento');
+            showModal({ title: 'Erro ao Criar', message: 'Houve um problema ao salvar o evento. Verifique os dados e tente novamente.', type: 'error' });
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Tem certeza que deseja excluir este evento?')) return;
-        try {
-            await socialAPI.deleteEvent(id);
-            fetchEvents();
-        } catch (error) {
-            console.error(error);
-            alert('Erro ao excluir evento');
-        }
+        showModal({
+            title: 'Excluir Evento',
+            message: 'Tem certeza que deseja remover este evento permanentemente?',
+            type: 'warning',
+            confirmLabel: 'Excluir',
+            onConfirm: async () => {
+                try {
+                    await socialAPI.deleteEvent(id);
+                    fetchEvents();
+                    showModal({ title: 'Sucesso', message: 'Evento removido com sucesso.', type: 'success' });
+                } catch (error) {
+                    console.error(error);
+                    showModal({ title: 'Erro ao Excluir', message: 'Não foi possível remover o evento agora.', type: 'error' });
+                }
+            }
+        });
     };
 
     return (

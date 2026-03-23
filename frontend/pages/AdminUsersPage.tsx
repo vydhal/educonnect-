@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../api';
 import { User, UserRole } from '../types';
+import { useModal } from '../contexts/ModalContext';
 
 interface AdminUser extends User {
     school?: string;
@@ -11,6 +12,7 @@ interface AdminUser extends User {
 
 const AdminUsersPage: React.FC = () => {
     const navigate = useNavigate();
+    const { showModal } = useModal();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -67,15 +69,22 @@ const AdminUsersPage: React.FC = () => {
     }, [page, search]);
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
-        try {
-            await adminAPI.deleteUser(id);
-            fetchUsers();
-            alert('Usuário excluído com sucesso!');
-        } catch (error) {
-            console.error(error);
-            alert('Erro ao excluir usuário');
-        }
+        showModal({
+            title: 'Confirmar Exclusão',
+            message: 'Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.',
+            type: 'warning',
+            confirmLabel: 'Excluir',
+            onConfirm: async () => {
+                try {
+                    await adminAPI.deleteUser(id);
+                    fetchUsers();
+                    showModal({ title: 'Sucesso', message: 'Usuário excluído com sucesso!', type: 'success' });
+                } catch (error) {
+                    console.error(error);
+                    showModal({ title: 'Erro', message: 'Erro ao excluir usuário', type: 'error' });
+                }
+            }
+        });
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -85,10 +94,10 @@ const AdminUsersPage: React.FC = () => {
             setIsCreating(false);
             setNewUser({ name: '', email: '', password: '', role: 'ALUNO', school: '', schoolId: '' });
             fetchUsers();
-            alert('Usuário criado com sucesso!');
+            showModal({ title: 'Sucesso', message: 'Usuário criado com sucesso!', type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao criar usuário');
+            showModal({ title: 'Erro', message: 'Erro ao criar usuário', type: 'error' });
         }
     };
 
@@ -108,10 +117,10 @@ const AdminUsersPage: React.FC = () => {
             setEditingUser(null);
             setEditPassword(''); // Reset
             fetchUsers();
-            alert('Usuário atualizado com sucesso!');
+            showModal({ title: 'Sucesso', message: 'Usuário atualizado com sucesso!', type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao atualizar usuário');
+            showModal({ title: 'Erro', message: 'Erro ao atualizar usuário', type: 'error' });
         }
     };
 
@@ -121,11 +130,11 @@ const AdminUsersPage: React.FC = () => {
         if (!file) return;
         try {
             await adminAPI.importUsers(file);
-            alert('Importação iniciada/concluída!');
+            showModal({ title: 'Sucesso', message: 'Importação enviada para processamento!', type: 'success' });
             fetchUsers();
         } catch (error) {
             console.error(error);
-            alert('Erro na importação');
+            showModal({ title: 'Erro', message: 'Erro na importação: Verifique o formato do arquivo.', type: 'error' });
         }
     };
 
@@ -401,24 +410,57 @@ const AdminUsersPage: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Escola</label>
-                                <input
-                                    value={editingUser.school || ''}
-                                    onChange={e => setEditingUser({ ...editingUser, school: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 outline-none"
-                                />
-                            </div>
+                            {editingUser.role === 'PROFESSOR' ? (
+                                <div>
+                                    <label className="block text-sm font-bold mb-1.5 text-gray-700">Escola / Unidade (Busca)</label>
+                                    <div className="relative group">
+                                        <input
+                                            list="edit-schools-list"
+                                            value={editingUser.school || ''}
+                                            onChange={e => {
+                                                const name = e.target.value;
+                                                const selected = schoolsList.find(s => s.name === name);
+                                                setEditingUser({
+                                                    ...editingUser,
+                                                    school: name,
+                                                    schoolId: selected ? selected.id : (editingUser as any).schoolId
+                                                } as any);
+                                            }}
+                                            placeholder="Digite para pesquisar a unidade..."
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none font-medium pr-10"
+                                        />
+                                        <datalist id="edit-schools-list">
+                                            {schoolsList.map(school => (
+                                                <option key={school.id} value={school.name} />
+                                            ))}
+                                        </datalist>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
+                                            <span className="material-symbols-outlined text-xl">search</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1.5 ml-1 uppercase font-bold tracking-wider italic">Dica: Digite o nome ou o INEP para filtrar</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-bold mb-1.5 text-gray-700">Escola</label>
+                                    <input
+                                        value={editingUser.school || ''}
+                                        onChange={e => setEditingUser({ ...editingUser, school: e.target.value })}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                        placeholder="Nome da escola (Alunos)"
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-bold mb-1.5 text-gray-700">Função</label>
                                 <select
                                     value={editingUser.role}
                                     onChange={e => setEditingUser({ ...editingUser, role: e.target.value as any })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 outline-none"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none cursor-pointer font-medium"
                                 >
                                     <option value="ALUNO">Aluno</option>
                                     <option value="PROFESSOR">Professor</option>
-                                    <option value="ADMIN">Admin</option>
+                                    <option value="ADMIN">Administrador</option>
                                 </select>
                             </div>
 

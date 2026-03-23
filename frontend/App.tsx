@@ -18,12 +18,16 @@ import AdminLayout from './components/AdminLayout';
 import AdminSchoolsPage from './pages/AdminSchoolsPage';
 import AdminEventsPage from './pages/AdminEventsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
+import AdminModerationPage from './pages/AdminModerationPage';
+import AdminSupportPage from './pages/AdminSupportPage';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { ModalProvider } from './contexts/ModalContext';
 
 const App: React.FC = () => {
   return (
     <SettingsProvider>
-      <Router>
+      <ModalProvider>
+        <Router>
         <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-gray-100">
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -44,12 +48,15 @@ const App: React.FC = () => {
               <Route path="schools" element={<AdminSchoolsPage />} />
               <Route path="events" element={<AdminEventsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="moderation" element={<AdminModerationPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </Router>
-    </SettingsProvider>
+    </ModalProvider>
+  </SettingsProvider>
   );
 };
 

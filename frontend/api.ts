@@ -217,7 +217,24 @@ export const adminAPI = {
     if (!response.ok) throw new Error('Falha na importação');
     return response.json();
   },
-  getReports: () => request('/admin/reports'),
+  getReports: (query: string = '') => request(`/admin/reports?${query}`),
+  exportReports: async (query: string = '') => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/admin/reports/export?${query}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Falha ao exportar relatório');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio_educonnect_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 
   // School Management
   getSchools: (query: string) => request(`/admin/schools?${query}`),
@@ -273,4 +290,12 @@ export const uploadAPI = {
     }
     return response.json(); // Returns { url: ... }
   }
+};
+
+// Support API
+export const supportAPI = {
+  getSupportItems: () => request('/support'),
+  createSupportItem: (data: any) => request('/support', { method: 'POST', body: JSON.stringify(data) }),
+  updateSupportItem: (id: string, data: any) => request(`/support/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSupportItem: (id: string) => request(`/support/${id}`, { method: 'DELETE' }),
 };

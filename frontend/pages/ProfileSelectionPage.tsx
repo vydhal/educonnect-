@@ -16,11 +16,25 @@ const ProfileSelectionPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="px-10 py-6 border-b flex justify-between items-center">
-        <div className="flex items-center gap-3 text-primary">
+        <div className="flex items-center gap-3 text-primary cursor-pointer" onClick={() => navigate('/')}>
           <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
-          <h2 className="text-xl font-bold">EduConnect CG</h2>
+          <h2 className="text-xl font-bold font-display">EduConnect CG</h2>
         </div>
-        <button onClick={() => navigate('/login')} className="bg-primary text-white font-bold px-6 py-2 rounded-lg">Entrar</button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/')} 
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 font-bold transition-colors text-sm"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            Voltar ao site
+          </button>
+          <button 
+            onClick={() => navigate('/login')} 
+            className="bg-primary text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all text-sm"
+          >
+            Entrar
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
@@ -29,12 +43,12 @@ const ProfileSelectionPage: React.FC = () => {
           Selecione a opção que melhor descreve sua atuação na rede municipal de Campina Grande para personalizarmos sua experiência.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-[1200px]">
+        <div className="flex flex-wrap justify-center gap-8 w-full max-w-[1100px]">
           {profiles.map(p => (
             <div
               key={p.role}
               onClick={() => setSelected(p.role)}
-              className={`p-8 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center text-center gap-4 ${selected === p.role ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'
+              className={`p-10 rounded-3xl border-2 transition-all cursor-pointer flex flex-col items-center text-center gap-6 w-full md:w-[320px] ${selected === p.role ? 'border-primary bg-primary/5 shadow-xl scale-105' : 'border-gray-100 bg-white hover:border-gray-300 hover:shadow-lg'
                 }`}
             >
               <div className={`size-16 rounded-full flex items-center justify-center transition-colors ${selected === p.role ? 'bg-primary text-white' : 'bg-primary/10 text-primary'

@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        'react-simple-wysiwyg': path.resolve(__dirname, 'node_modules/react-simple-wysiwyg')
       }
     }
   };

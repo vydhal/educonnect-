@@ -252,3 +252,14 @@ model Testimonial {
 
   @@index([receiverId])
 }
+
+model SupportItem {
+  id        String   @id @default(cuid())
+  type      String   // 'FAQ' | 'TUTORIAL'
+  title     String
+  content   String   @db.Text
+  link      String?  // Optional video link or external URL
+  order     Int      @default(0) // For sorting
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

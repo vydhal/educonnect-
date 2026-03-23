@@ -14,44 +14,25 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req: AuthenticatedR
             usersCount,
             postsCount,
             pendingModerationCount,
-            recentUsers
+            likesCount,
+            commentsCount
         ] = await Promise.all([
             prisma.user.count(),
             prisma.post.count(),
             prisma.moderationItem.count({
                 where: { status: 'PENDENTE' }
             }),
-            prisma.user.findMany({
-                take: 5,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                    createdAt: true,
-                    school: true
-                }
-            })
+            prisma.like.count(),
+            prisma.comment.count()
         ]);
 
-        // Calculate growth (mocked for now, or based on last month if available)
-        // For simplicity, we'll return the raw counts and let frontend handle "trends" or just show counts
+        const totalInteractions = likesCount + commentsCount;
 
         res.json({
-            users: {
-                total: usersCount,
-                trend: '+12%' // Placeholder, consistent with UI
-            },
-            posts: {
-                total: postsCount,
-                trend: '+5.4%' // Placeholder
-            },
-            moderation: {
-                pending: pendingModerationCount,
-                trend: pendingModerationCount > 0 ? '+1' : '0'
-            },
-            recentUsers
+            users: { total: usersCount, trend: '+12%' },
+            posts: { total: postsCount, trend: '+5.4%' },
+            interactions: { total: totalInteractions, trend: '+8%' },
+            moderation: { pending: pendingModerationCount, trend: pendingModerationCount > 0 ? '+1' : '0' }
         });
     } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -63,7 +44,6 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req: AuthenticatedR
 router.get('/settings', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const settings = await prisma.systemSettings.findMany();
-        // Convert array to object { key: value }
         const settingsMap = settings.reduce((acc: Record<string, any>, curr) => ({
             ...acc,
             [curr.key]: curr.value
@@ -76,9 +56,7 @@ router.get('/settings', authMiddleware, adminMiddleware, async (req: Authenticat
 
 router.put('/settings', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const settings = req.body; // { APP_NAME: "EduConnect", ... }
-
-        // Upsert each setting
+        const settings = req.body;
         await Promise.all(
             Object.entries(settings).map(([key, value]) =>
                 prisma.systemSettings.upsert({
@@ -88,7 +66,6 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req: Authenticat
                 })
             )
         );
-
         res.json({ message: 'Settings updated successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -96,8 +73,6 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req: Authenticat
 });
 
 // User Management Endpoints
-
-// Get all users (with pagination and search)
 router.get('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
@@ -118,91 +93,77 @@ router.get('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedR
             where.role = role.toUpperCase();
         }
 
-        const [users, total] = await Promise.all([
+        const [usersRaw, total] = await Promise.all([
             prisma.user.findMany({
                 where,
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
+                select: { 
+                    id: true, 
+                    name: true, 
+                    email: true, 
+                    role: true, 
                     school: true,
-                    createdAt: true,
-                    avatar: true
+                    schoolId: true,
+                    createdAt: true, 
+                    avatar: true,
+                    worksAt: { select: { name: true } }
                 }
             }),
             prisma.user.count({ where })
         ]);
 
-        res.json({
-            users,
-            total,
-            page,
-            totalPages: Math.ceil(total / limit)
-        });
+        const users = usersRaw.map(u => ({
+            ...u,
+            school: u.worksAt?.name || u.school
+        }));
+
+        res.json({ users, total, page, totalPages: Math.ceil(total / limit) });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Create User (Single)
 router.post('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    console.log('DEBUG: POST /admin/users request received');
-    console.log('DEBUG: Body:', req.body);
-
     try {
-        const { name, email, password, role, school } = req.body;
-
-        if (!name || !email || !password) {
-            console.log('DEBUG: Missing required fields');
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
+        const { name, email, password, role, school, schoolId } = req.body;
+        if (!name || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            console.log('DEBUG: Email already exists:', email);
-            return res.status(400).json({ error: 'Email already exists' });
-        }
+        if (existingUser) return res.status(400).json({ error: 'Email already exists' });
 
-        console.log('DEBUG: Hashing password...');
         const hashedPassword = await hashPassword(password);
-
-        console.log('DEBUG: Creating user in database...');
         const newUser = await prisma.user.create({
             data: {
-                name,
-                email,
+                name, email,
                 password: hashedPassword,
                 role: role ? role.toUpperCase() : 'ALUNO',
-                school, // Legacy string
-                schoolId: req.body.schoolId || null, // New relation, handle empty string
+                school, schoolId: schoolId || null,
                 verified: true
             }
         });
-
-        console.log('DEBUG: User created successfully:', newUser.id);
         res.status(201).json(newUser);
     } catch (error) {
-        console.error('DEBUG: Error creating user:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Update User
 router.put('/users/:id', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { name, email, role, school, schoolId } = req.body;
+        const { name, email, role, school, schoolId, inep, zone, address, phone, schoolType } = req.body;
         const user = await prisma.user.update({
             where: { id: req.params.id },
             data: {
-                name,
-                email,
+                name, email,
                 role: role ? role.toUpperCase() : undefined,
-                school,
-                schoolId: schoolId || (schoolId === null ? null : undefined) // Handle null/empty/undefined
+                school, 
+                schoolId: schoolId || (schoolId === null ? null : undefined),
+                inep,
+                zone,
+                address,
+                phone,
+                schoolType
             }
         });
         res.json(user);
@@ -211,32 +172,163 @@ router.put('/users/:id', authMiddleware, adminMiddleware, async (req: Authentica
     }
 });
 
-// Delete User
 router.delete('/users/:id', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        await prisma.user.delete({
-            where: { id: req.params.id }
-        });
+        await prisma.user.delete({ where: { id: req.params.id } });
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-
 // Reports Endpoints
-router.get('/reports/growth', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/reports', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        // Mock data for now as we might not have enough history
-        // Real implementation would group by createdAt
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const data = months.map(month => ({
-            name: month,
-            users: Math.floor(Math.random() * 100) + 50,
-            posts: Math.floor(Math.random() * 200) + 100
-        }));
-        res.json(data);
+        const { days = '180', schoolId } = req.query;
+        const now = new Date();
+        const startDate = new Date();
+        startDate.setDate(now.getDate() - Number(days));
+
+        // Base filters
+        const userWhere: any = { createdAt: { gte: startDate } };
+        const postWhere: any = { createdAt: { gte: startDate } };
+
+        if (schoolId) {
+            userWhere.schoolId = String(schoolId);
+            postWhere.author = { schoolId: String(schoolId) };
+        }
+
+        const [users, posts] = await Promise.all([
+            prisma.user.findMany({ 
+                where: userWhere, 
+                select: { createdAt: true } 
+            }),
+            prisma.post.findMany({ 
+                where: postWhere, 
+                select: { createdAt: true } 
+            })
+        ]);
+
+        // Helper to format month name
+        const getMonthName = (date: Date) => date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
+        
+        // Dynamic time bins
+        const lastMonths: { name: string, month: number, year: number, users: number, posts: number }[] = [];
+        const numMonths = Math.ceil(Number(days) / 30);
+        
+        for (let i = numMonths - 1; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            lastMonths.push({ name: getMonthName(d), month: d.getMonth(), year: d.getFullYear(), users: 0, posts: 0 });
+        }
+
+        users.forEach(u => {
+            const found = lastMonths.find(l => l.month === u.createdAt.getMonth() && l.year === u.createdAt.getFullYear());
+            if (found) found.users++;
+        });
+
+        posts.forEach(p => {
+            const found = lastMonths.find(l => l.month === p.createdAt.getMonth() && l.year === p.createdAt.getFullYear());
+            if (found) found.posts++;
+        });
+
+        // Engagement ranking - Use explicit include to help TS
+        const postsWithEngagement = await prisma.post.findMany({
+            where: postWhere,
+            include: {
+                author: { select: { school: true, worksAt: { select: { name: true } } } },
+                _count: { select: { likes: true, comments: true } }
+            }
+        });
+
+        const engagementByUnit: Record<string, { name: string, engagement: number, posts: number }> = {};
+        postsWithEngagement.forEach(post => {
+            const unitName = post.author?.worksAt?.name || post.author?.school || 'Sem Unidade';
+            if (!engagementByUnit[unitName]) engagementByUnit[unitName] = { name: unitName, engagement: 0, posts: 0 };
+            engagementByUnit[unitName].engagement += (post._count?.likes || 0) + (post._count?.comments || 0);
+            engagementByUnit[unitName].posts += 1;
+        });
+
+        const sortedUnits = Object.values(engagementByUnit).sort((a, b) => b.engagement - a.engagement).slice(0, 5);
+        
+        const topPosts = postsWithEngagement.map(p => ({
+            id: p.id,
+            author: p.author?.worksAt?.name || p.author?.school || 'Usuário',
+            label: p.content.substring(0, 50) + (p.content.length > 50 ? '...' : ''),
+            val: (p._count?.likes || 0) + (p._count?.comments || 0),
+            icon: 'analytics'
+        })).sort((a, b) => b.val - a.val).slice(0, 5);
+
+        const allTags = postsWithEngagement.flatMap(p => p.tags || []);
+        const tagCounts: Record<string, number> = {};
+        allTags.forEach(tag => { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+        const topTags = Object.entries(tagCounts).map(([text, count]) => ({ text, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+
+        res.json({ growth: lastMonths, unitEngagement: sortedUnits, topPosts, topTags });
     } catch (error) {
+        console.error('Error fetching reports:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Export Reports CSV
+router.get('/reports/export', authMiddleware, adminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { days = '180', schoolId } = req.query;
+        const now = new Date();
+        const startDate = new Date();
+        startDate.setDate(now.getDate() - Number(days));
+
+        const userWhere: any = { createdAt: { gte: startDate } };
+        const postWhere: any = { createdAt: { gte: startDate } };
+        if (schoolId) {
+            userWhere.schoolId = String(schoolId);
+            postWhere.author = { schoolId: String(schoolId) };
+        }
+
+        const [usersCount, postsCount] = await Promise.all([
+            prisma.user.count({ where: userWhere }),
+            prisma.post.count({ where: postWhere })
+        ]);
+
+        let csvContent = '\ufeff'; // UTF-8 BOM
+        csvContent += 'EduConnect CG - Relatório de Desempenho Administrativo\n';
+        csvContent += `Filtro:;${schoolId ? 'Unidade Específica' : 'Todas as Unidades'}\n`;
+        csvContent += `Período:;Últimos ${days} dias\n`;
+        csvContent += `Data de Exportação:;${new Date().toLocaleString('pt-BR')}\n\n`;
+        
+        csvContent += 'MÉTRICAS NO PERÍODO\n';
+        csvContent += 'Métrica;Valor\n';
+        csvContent += `Novos Usuários;${usersCount}\n`;
+        csvContent += `Novas Postagens;${postsCount}\n\n`;
+
+        // Ranking units / Detail for specific unit
+        const postsWithEngagement = await prisma.post.findMany({
+            where: postWhere,
+            include: {
+                author: { select: { school: true, worksAt: { select: { name: true } } } },
+                _count: { select: { likes: true, comments: true } }
+            }
+        });
+
+        const engagementByUnit: Record<string, { engagement: number, posts: number }> = {};
+        postsWithEngagement.forEach(post => {
+            const unitName = post.author?.worksAt?.name || post.author?.school || 'Sem Unidade';
+            if (!engagementByUnit[unitName]) engagementByUnit[unitName] = { engagement: 0, posts: 0 };
+            engagementByUnit[unitName].engagement += (post._count?.likes || 0) + (post._count?.comments || 0);
+            engagementByUnit[unitName].posts += 1;
+        });
+
+        csvContent += 'ENGAJAMENTO POR UNIDADE\n';
+        csvContent += 'Unidade;Postagens;Interações\n';
+        Object.entries(engagementByUnit).sort((a, b) => b[1].engagement - a[1].engagement).forEach(([name, data]) => {
+            csvContent += `"${name}";${data.posts};${data.engagement}\n`;
+        });
+
+        res.header('Content-Type', 'text/csv; charset=utf-8');
+        res.header('Content-Disposition', 'attachment; filename="relatorio_educonnect.csv"');
+        res.send(csvContent);
+    } catch (error) {
+        console.error('Error exporting reports:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

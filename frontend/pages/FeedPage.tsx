@@ -6,6 +6,7 @@ import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
 import { Header } from '../components/Header';
 import { ImageCarousel } from '../components/ImageCarousel';
+import { useModal } from '../contexts/ModalContext';
 
 // Extend Post type locally if not updated in types.ts yet
 interface FeedPost extends Post {
@@ -66,6 +67,7 @@ const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?:
 
 const FeedPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showModal } = useModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
   const [interactionModal, setInteractionModal] = useState<{ type: 'aplause' | 'comment' | 'send' | null, postId: string | null }>({ type: null, postId: null });
@@ -213,15 +215,22 @@ const FeedPage: React.FC = () => {
   };
 
   const handleDeletePost = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta publicação?')) {
-      try {
-        await postsAPI.deletePost(id);
-        fetchPosts();
-      } catch (error) {
-        console.error('Failed to delete post', error);
-        alert('Erro ao excluir publicação');
+    showModal({
+      title: 'Excluir Publicação',
+      message: 'Tem certeza que deseja remover esta postagem permanentemente?',
+      type: 'warning',
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
+        try {
+          await postsAPI.deletePost(id);
+          fetchPosts();
+          showModal({ title: 'Removida', message: 'A publicação foi excluída com sucesso.', type: 'success' });
+        } catch (error) {
+          console.error('Failed to delete post', error);
+          showModal({ title: 'Erro', message: 'Não foi possível excluir a publicação. Tente novamente.', type: 'error' });
+        }
       }
-    }
+    });
   };
 
   const handleSendComment = async () => {

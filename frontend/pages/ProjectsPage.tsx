@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { projectsAPI, uploadAPI, postsAPI, authAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnUnderline, BtnLink, BtnStrikeThrough, BtnNumberedList, BtnBulletList, BtnClearFormatting } from 'react-simple-wysiwyg';
 
 const ETAPAS = {
@@ -14,6 +15,7 @@ const ETAPAS = {
 
 const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showModal } = useModal();
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,8 +103,9 @@ const ProjectsPage: React.FC = () => {
         image: '',
         images: []
       });
+      showModal({ title: 'Sucesso!', message: isEditing ? 'Inspiração atualizada com sucesso.' : 'Sua prática pedagógica foi publicada e compartilhada no feed!', type: 'success' });
     } catch (error) {
-      alert('Erro ao publicar: ' + error);
+      showModal({ title: 'Ops!', message: 'Ocorreu um erro ao publicar sua inspiração. Verifique os campos e tente novamente.', type: 'error' });
     }
   };
 
@@ -135,7 +138,7 @@ const ProjectsPage: React.FC = () => {
         setFormData(prev => ({ ...prev, images: [...prev.images, url] }));
       }
     } catch (error) {
-      alert('Erro no upload');
+      showModal({ title: 'Erro de Upload', message: 'Não foi possível carregar a imagem. Verifique sua conexão ou o tamanho do arquivo.', type: 'error' });
     }
   };
 
@@ -150,7 +153,7 @@ const ProjectsPage: React.FC = () => {
       setSelectedProject(updated);
       fetchProjects();
     } catch (error) {
-      alert('Erro ao comentar');
+      showModal({ title: 'Erro ao Comentar', message: 'Não foi possível enviar seu comentário.', type: 'error' });
     }
   };
 
@@ -180,13 +183,21 @@ const ProjectsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta inspiração?')) return;
-    try {
-      await projectsAPI.deleteProject(id);
-      fetchProjects();
-    } catch (error) {
-      alert('Erro ao excluir');
-    }
+    showModal({
+      title: 'Excluir Inspiração',
+      message: 'Tem certeza que deseja remover esta prática pedagógica?',
+      type: 'warning',
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
+        try {
+          await projectsAPI.deleteProject(id);
+          fetchProjects();
+          showModal({ title: 'Sucesso', message: 'Inspiração excluída com sucesso.', type: 'success' });
+        } catch (error) {
+          showModal({ title: 'Erro', message: 'Ocorreu um erro ao tentar excluir.', type: 'error' });
+        }
+      }
+    });
   };
 
   return (

@@ -43,5 +43,6 @@ export interface User {
   role: UserRole;
   avatar?: string;
   school?: string;
+  schoolId?: string;
   createdAt?: string;
 }

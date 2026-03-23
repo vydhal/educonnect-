@@ -5,13 +5,15 @@ import { authAPI } from '../api';
 import { Header } from '../components/Header';
 import { useSettings } from '../contexts/SettingsContext'; // For theme toggle
 import { ImageUpload } from '../components/ImageUpload';
+import { supportAPI } from '../api';
 
 const ProfileSettingsPage: React.FC = () => {
     const navigate = useNavigate();
     const { darkMode, toggleDarkMode } = useSettings();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'geral' | 'seguranca' | 'aparencia'>('geral');
+    const [activeTab, setActiveTab] = useState<'geral' | 'seguranca' | 'aparencia' | 'suporte'>('geral');
+    const [supportItems, setSupportItems] = useState<any[]>([]);
 
     // Form States
     const [name, setName] = useState('');
@@ -37,6 +39,14 @@ const ProfileSettingsPage: React.FC = () => {
             })
             .finally(() => setLoading(false));
     }, [navigate]);
+
+    useEffect(() => {
+        if (activeTab === 'suporte' && supportItems.length === 0) {
+            supportAPI.getSupportItems()
+                .then((data: any) => setSupportItems(data))
+                .catch((err: any) => console.error('Erro ao buscar suporte', err));
+        }
+    }, [activeTab, supportItems.length]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -104,6 +114,12 @@ const ProfileSettingsPage: React.FC = () => {
                                 >
                                     <span className="material-symbols-outlined">palette</span> Aparência
                                 </button>
+                                <button
+                                    onClick={() => setActiveTab('suporte')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'suporte' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                >
+                                    <span className="material-symbols-outlined">help_center</span> FAQ e Tutoriais
+                                </button>
                             </nav>
                             <div className="p-4 border-t dark:border-gray-800">
                                 <button
@@ -123,6 +139,7 @@ const ProfileSettingsPage: React.FC = () => {
                                 {activeTab === 'geral' && 'Configurações Gerais'}
                                 {activeTab === 'seguranca' && 'Segurança da Conta'}
                                 {activeTab === 'aparencia' && 'Aparência e Tema'}
+                                {activeTab === 'suporte' && 'FAQ e Tutoriais'}
                             </h1>
 
                             {successMsg && (
@@ -219,6 +236,38 @@ const ProfileSettingsPage: React.FC = () => {
                                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                                         </label>
                                     </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'suporte' && (
+                                <div className="space-y-6">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Aqui você encontra as principais dúvidas respondidas e vídeos tutoriais sobre como usar as ferramentas da plataforma.</p>
+                                    
+                                    {supportItems.length === 0 ? (
+                                        <div className="text-center py-10 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                            <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">inbox</span>
+                                            <p className="text-gray-500 text-sm">Nenhum FAQ ou tutorial disponível no momento.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {supportItems.map(item => (
+                                                <div key={item.id} className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className={`material-symbols-outlined text-sm ${item.type === 'FAQ' ? 'text-blue-500' : 'text-purple-500'}`}>
+                                                            {item.type === 'FAQ' ? 'help' : 'play_circle'}
+                                                        </span>
+                                                        <h4 className="font-bold text-gray-800 dark:text-white">{item.title}</h4>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{item.content}</p>
+                                                    {item.link && (
+                                                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-bold mt-4 hover:underline">
+                                                            Acessar Link Externo <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

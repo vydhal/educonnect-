@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { uploadAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 interface MultiImageUploadProps {
     images: string[];
@@ -10,13 +11,14 @@ interface MultiImageUploadProps {
 export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({ images, onImagesChange, maxImages = 4 }) => {
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { showModal } = useModal();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
         if (images.length + files.length > maxImages) {
-            alert(`Você pode enviar no máximo ${maxImages} imagens.`);
+            showModal({ title: 'Limite de Imagens', message: `Você pode enviar no máximo ${maxImages} imagens por publicação.`, type: 'info' });
             return;
         }
 
@@ -28,7 +30,7 @@ export const MultiImageUpload: React.FC<MultiImageUploadProps> = ({ images, onIm
             onImagesChange([...images, ...newUrls]);
         } catch (error) {
             console.error('Upload failed', error);
-            alert('Falha ao enviar algumas imagens.');
+            showModal({ title: 'Erro de Upload', message: 'Houve uma falha ao enviar uma ou mais imagens. Por favor, tente novamente.', type: 'error' });
         } finally {
             setLoading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

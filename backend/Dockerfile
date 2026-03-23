@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "echo '🚀 Starting EduConnect Backend...' && until pg_isready -h educonnect_db -U educonnect -d educonnect_db; do sleep 2; done && npx prisma db push && npm run prisma:seed && npx tsx src/server.ts"]
+CMD ["sh", "-c", "echo '🚀 Starting EduConnect Backend...' && until pg_isready -h postgres -U educonnect -d educonnect_db; do sleep 2; done && npx prisma db push && npm run prisma:seed && npx tsx src/server.ts"]

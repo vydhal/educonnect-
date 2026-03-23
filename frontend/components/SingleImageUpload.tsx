@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { uploadAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 interface SingleImageUploadProps {
     imageUrl: string;
@@ -12,6 +13,7 @@ interface SingleImageUploadProps {
 export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({ imageUrl, onImageChange, label, description }) => {
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { showModal } = useModal();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -23,7 +25,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({ imageUrl, 
             onImageChange(result.url);
         } catch (error) {
             console.error('Upload failed', error);
-            alert('Falha no upload da imagem.');
+            showModal({ title: 'Erro de Upload', message: 'Não foi possível enviar a imagem. Verifique sua conexão ou o formato do arquivo e tente novamente.', type: 'error' });
         } finally {
             setLoading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

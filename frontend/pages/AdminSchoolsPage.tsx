@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 interface SchoolUser {
     id: string;
@@ -18,15 +19,15 @@ interface SchoolUser {
 
 const AdminSchoolsPage: React.FC = () => {
     const navigate = useNavigate();
+    const { showModal } = useModal();
     const [schools, setSchools] = useState<SchoolUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [zoneFilter, setZoneFilter] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [editingSchool, setEditingSchool] = useState<SchoolUser | null>(null);
     const [isCreating, setIsCreating] = useState(false);
-
-    // New School Form State
     const [newSchool, setNewSchool] = useState({
         name: '',
         email: '',
@@ -65,14 +66,49 @@ const AdminSchoolsPage: React.FC = () => {
             setIsCreating(false);
             setNewSchool({ name: '', email: '', password: '', inep: '', zone: 'URBANA', address: '', phone: '', schoolType: 'ESCOLA' });
             fetchSchools();
-            alert('Escola cadastrada com sucesso!');
+            showModal({ title: 'Escola Cadastrada', message: 'A unidade educacional foi registrada com sucesso no sistema.', type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao cadastrar escola');
+            showModal({ title: 'Erro no Cadastro', message: 'Não foi possível cadastrar a unidade. Verifique o email e o INEP.', type: 'error' });
         }
     };
 
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingSchool) return;
+        try {
+            await adminAPI.updateUser(editingSchool.id, editingSchool);
+            setEditingSchool(null);
+            fetchSchools();
+            showModal({ title: 'Atualização Concluída', message: 'Os dados da unidade foram atualizados com sucesso.', type: 'success' });
+        } catch (error) {
+            console.error(error);
+            showModal({ title: 'Erro na Atualização', message: 'Não foi possível salvar as alterações da escola.', type: 'error' });
+        }
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        showModal({
+            title: 'Excluir Unidade?',
+            message: `Tem certeza que deseja remover "${name}"? Esta ação removerá o acesso da escola ao sistema e não pode ser desfeita.`,
+            type: 'warning',
+            confirmLabel: 'Sim, Excluir',
+            cancelLabel: 'Manter Escola',
+            onConfirm: async () => {
+                try {
+                    await adminAPI.deleteUser(id);
+                    fetchSchools();
+                    showModal({ title: 'Escola Removida', message: 'A unidade foi excluída permanentemente.', type: 'success' });
+                } catch (error) {
+                    console.error(error);
+                    showModal({ title: 'Erro ao Excluir', message: 'Não foi possível remover esta unidade no momento.', type: 'error' });
+                }
+            }
+        });
+    };
+
     const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        // (existing code...)
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -81,7 +117,6 @@ const AdminSchoolsPage: React.FC = () => {
             const text = event.target?.result as string;
             if (!text) return;
 
-            // Simple CSV parser
             const lines = text.split('\n');
             const headers = lines[0].split(',').map(h => h.trim());
 
@@ -89,7 +124,6 @@ const AdminSchoolsPage: React.FC = () => {
                 const values = line.split(',').map(v => v.trim());
                 const school: any = {};
                 headers.forEach((header, index) => {
-                    // Remove quotes if present
                     let val = values[index] || '';
                     if (val.startsWith('"') && val.endsWith('"')) {
                         val = val.substring(1, val.length - 1);
@@ -100,25 +134,27 @@ const AdminSchoolsPage: React.FC = () => {
             });
 
             if (schools.length === 0) {
-                alert('O arquivo parece estar vazio.');
+                showModal({ title: 'Arquivo Inválido', message: 'O arquivo parece estar vazio ou não contém escolas válidas.', type: 'warning' });
                 return;
             }
 
             try {
                 setLoading(true);
                 const result = await adminAPI.importSchools(schools);
-                alert(`Importação concluída! Sucesso: ${result.imported}, Erros: ${result.errors?.length || 0}`);
+                showModal({ 
+                    title: 'Importação Concluída', 
+                    message: `O processamento do arquivo foi finalizado. Sucesso: ${result.imported}${result.errors?.length > 0 ? `, Erros: ${result.errors.length}` : ''}`, 
+                    type: result.errors?.length > 0 ? 'warning' : 'success' 
+                });
                 fetchSchools();
             } catch (error: any) {
                 console.error(error);
-                alert('Erro na importação: ' + error.message);
+                showModal({ title: 'Falha na Importação', message: 'Houve um erro técnico ao processar as escolas do CSV.', type: 'error' });
             } finally {
                 setLoading(false);
             }
         };
         reader.readAsText(file);
-
-        // Reset input
         e.target.value = '';
     };
 
@@ -126,7 +162,7 @@ const AdminSchoolsPage: React.FC = () => {
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold">Gestão de Escolas</h1>
+                    <h1 className="text-3xl font-bold font-display">Gestão de Escolas</h1>
                     <p className="text-gray-500">Gerencie as unidades educacionais da rede.</p>
                 </div>
                 <div className="flex gap-2">
@@ -187,7 +223,7 @@ const AdminSchoolsPage: React.FC = () => {
                             <tr key={school.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="p-5">
                                     <div className="flex items-center gap-4">
-                                        <div className="size-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
+                                        <div className="size-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100">
                                             {school.name.substring(0, 2).toUpperCase()}
                                         </div>
                                         <div>
@@ -211,7 +247,7 @@ const AdminSchoolsPage: React.FC = () => {
                                         </span>
                                     )}
                                 </td>
-                                <td className="p-5 text-sm text-gray-600">
+                                <td className="p-5 text-sm text-gray-600 font-medium">
                                     <div className="flex flex-col">
                                         <span>{school.phone || '—'}</span>
                                         <span className="text-xs text-gray-400 truncate max-w-[200px]">{school.address}</span>
@@ -219,8 +255,19 @@ const AdminSchoolsPage: React.FC = () => {
                                 </td>
                                 <td className="p-5">
                                     <div className="flex justify-end gap-2">
-                                        <button className="size-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors" title="Editar">
+                                        <button 
+                                            onClick={() => setEditingSchool(school)}
+                                            className="size-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors" 
+                                            title="Editar"
+                                        >
                                             <span className="material-symbols-outlined text-lg">edit</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(school.id, school.name)}
+                                            className="size-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors" 
+                                            title="Excluir"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">delete</span>
                                         </button>
                                     </div>
                                 </td>
@@ -250,9 +297,9 @@ const AdminSchoolsPage: React.FC = () => {
             {/* Create Modal */}
             {isCreating && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-                    <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                    <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold">Nova Escola</h2>
+                            <h2 className="text-2xl font-bold font-display">Nova Escola</h2>
                             <button onClick={() => setIsCreating(false)} className="text-gray-400 hover:text-gray-600">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
@@ -312,7 +359,7 @@ const AdminSchoolsPage: React.FC = () => {
                                 <label className="block text-sm font-bold mb-1.5 text-gray-700">Zona</label>
                                 <select
                                     value={newSchool.zone}
-                                    onChange={e => setNewSchool({ ...newSchool, zone: e.target.value })}
+                                    onChange={e => setNewSchool({ ...newSchool, zone: e.target.value as any })}
                                     className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
                                 >
                                     <option value="URBANA">Urbana</option>
@@ -324,7 +371,7 @@ const AdminSchoolsPage: React.FC = () => {
                                 <label className="block text-sm font-bold mb-1.5 text-gray-700">Tipo de Unidade</label>
                                 <select
                                     value={newSchool.schoolType}
-                                    onChange={e => setNewSchool({ ...newSchool, schoolType: e.target.value })}
+                                    onChange={e => setNewSchool({ ...newSchool, schoolType: e.target.value as any })}
                                     className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
                                 >
                                     <option value="ESCOLA">Escola (EMEF)</option>
@@ -356,15 +403,127 @@ const AdminSchoolsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+                                    className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
                                 >
                                     Cadastrar Escola
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editingSchool && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+                    <div className="bg-white rounded-3xl p-10 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <div className="flex justify-between items-center mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="size-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <span className="material-symbols-outlined text-2xl">edit_square</span>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold font-display">Editar Escola</h2>
+                                    <p className="text-gray-500 text-sm">Atualize as informações da unidade educacional.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setEditingSchool(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Nome da Escola</label>
+                                <input
+                                    required
+                                    value={editingSchool.name}
+                                    onChange={e => setEditingSchool({ ...editingSchool, name: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Email Administrativo</label>
+                                <input
+                                    required
+                                    type="email"
+                                    value={editingSchool.email}
+                                    onChange={e => setEditingSchool({ ...editingSchool, email: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Código INEP</label>
+                                <input
+                                    value={editingSchool.inep}
+                                    onChange={e => setEditingSchool({ ...editingSchool, inep: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Zona</label>
+                                <select
+                                    value={editingSchool.zone}
+                                    onChange={e => setEditingSchool({ ...editingSchool, zone: e.target.value as any })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                >
+                                    <option value="URBANA">Urbana</option>
+                                    <option value="RURAL">Rural</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Tipo de Unidade</label>
+                                <select
+                                    value={editingSchool.schoolType}
+                                    onChange={e => setEditingSchool({ ...editingSchool, schoolType: e.target.value as any })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                >
+                                    <option value="ESCOLA">Escola (EMEF)</option>
+                                    <option value="CRECHE">Creche</option>
+                                    <option value="CMEI">CMEI</option>
+                                </select>
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Endereço Completo</label>
+                                <input
+                                    value={editingSchool.address}
+                                    onChange={e => setEditingSchool({ ...editingSchool, address: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Telefone/Contato</label>
+                                <input
+                                    value={editingSchool.phone}
+                                    onChange={e => setEditingSchool({ ...editingSchool, phone: e.target.value })}
+                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                />
+                            </div>
+
+                            <div className="col-span-2 flex justify-end gap-3 mt-6 border-t pt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingSchool(null)}
+                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-8 py-3 bg-primary text-white font-black rounded-xl hover:opacity-90 transition-all shadow-xl shadow-primary/25 active:scale-95"
+                                >
+                                    Salvar Alterações
                                 </button>
                             </div>
                         </form>

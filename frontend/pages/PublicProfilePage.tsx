@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { usersAPI, socialAPI, authAPI, projectsAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 const PublicProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { showModal } = useModal();
 
     const [profileUser, setProfileUser] = useState<any>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -101,10 +103,10 @@ const PublicProfilePage: React.FC = () => {
             // Refresh counts
             const badgeData = await socialAPI.getBadges(id);
             setBadges(badgeData);
-            alert(`Você deu o selo de ${type}!`);
+            showModal({ title: 'Reconhecimento Enviado!', message: `Você concedeu o selo de ${type} para este perfil. Inspirador!`, type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao dar selo. Talvez você já tenha dado este selo?');
+            showModal({ title: 'Ops!', message: 'Não foi possível conceder este selo. Talvez você já tenha avaliado este perfil recentemente.', type: 'error' });
         }
     };
 
@@ -116,10 +118,10 @@ const PublicProfilePage: React.FC = () => {
             setIsSendingTestimonial(true);
             await socialAPI.sendTestimonial(id, testimonialContent);
             setTestimonialContent('');
-            alert('Depoimento enviado! Aparecerá após você (o dono do perfil) aprová-lo na aba Depoimentos.');
+            showModal({ title: 'Depoimento Enviado', message: 'Seu relato foi enviado com sucesso! Ele aparecerá no perfil assim que for aprovado pelo proprietário.', type: 'success' });
         } catch (error) {
             console.error(error);
-            alert('Erro ao enviar depoimento.');
+            showModal({ title: 'Erro ao Enviar', message: 'Ocorreu um problema ao processar seu depoimento. Tente novamente mais tarde.', type: 'error' });
         } finally {
             setIsSendingTestimonial(false);
         }

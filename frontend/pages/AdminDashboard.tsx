@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
 import { ModerationItem } from '../types';
 import { adminAPI, moderationAPI } from '../api';
+import { useModal } from '../contexts/ModalContext';
 
 interface DashboardStats {
   users: { total: number; trend: string };
@@ -13,6 +14,7 @@ interface DashboardStats {
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { showModal } = useModal();
   const [stats, setStats] = useState<DashboardStats>({
     users: { total: 0, trend: '0%' },
     posts: { total: 0, trend: '0%' },
@@ -61,7 +63,11 @@ const AdminDashboard: React.FC = () => {
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: newStatus } : item));
     } catch (error) {
       console.error('Error updating item status:', error);
-      alert('Erro ao atualizar status. Tente novamente.');
+      showModal({ 
+        title: 'Erro na Moderação', 
+        message: 'Não foi possível atualizar o status do item. Por favor, tente novamente.', 
+        type: 'error' 
+      });
     }
   };
 
@@ -82,7 +88,9 @@ const AdminDashboard: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard label="Usuários Ativos" value={stats.users.total.toString()} trend={stats.users.trend} icon="groups" color="primary" />
         <StatCard label="Novas Postagens" value={stats.posts.total.toString()} trend={stats.posts.trend} icon="post_add" color="primary" />
-        <StatCard label="Pendentes" value={stats.moderation.pending.toString()} trend={stats.moderation.trend} icon="pending_actions" color="orange" />
+        <div onClick={() => navigate('/admin/moderation')} className="cursor-pointer group">
+          <StatCard label="Pendentes" value={stats.moderation.pending.toString()} trend={stats.moderation.trend} icon="pending_actions" color="orange" />
+        </div>
       </section>
 
       {/* Moderation Table */}

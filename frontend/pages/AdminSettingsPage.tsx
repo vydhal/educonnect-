@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { SingleImageUpload } from '../components/SingleImageUpload';
+import { useModal } from '../contexts/ModalContext';
 
 const AdminSettingsPage: React.FC = () => {
     const { settings, updateSettings, loading } = useSettings();
+    const { showModal } = useModal();
     const [formData, setFormData] = useState({
         APP_NAME: '',
         PRIMARY_COLOR: '#000000',
@@ -35,9 +37,9 @@ const AdminSettingsPage: React.FC = () => {
         e.preventDefault();
         try {
             await updateSettings(formData);
-            alert('Configurações salvas e aplicadas!');
+            showModal({ title: 'Configurações Salvas', message: 'As alterações foram aplicadas com sucesso em todo o sistema.', type: 'success' });
         } catch (error) {
-            alert('Erro ao salvar configurações.');
+            showModal({ title: 'Falha ao Salvar', message: 'Ocorreu um erro ao processar as alterações. Por favor, tente novamente.', type: 'error' });
         }
     };
 

@@ -7,6 +7,7 @@ import ProfileSelectionPage from './pages/ProfileSelectionPage';
 import RegistrationPage from './pages/RegistrationPage';
 import FeedPage from './pages/FeedPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminModerationPage from './pages/AdminModerationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NetworkPage from './pages/NetworkPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           <Route path="/network" element={<NetworkPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/moderation" element={<AdminModerationPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
