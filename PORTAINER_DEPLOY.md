@@ -31,7 +31,7 @@ VITE_API_URL=https://seu-dominio.com/api
 # Node
 NODE_ENV=production
 ```
-
+teste
 ### 2. Preparar o Repositório
 
 Se usar Git, certifique-se que:
