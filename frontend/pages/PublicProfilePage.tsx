@@ -148,9 +148,9 @@ const PublicProfilePage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
-            <Header activeTab="network" onLogout={() => navigate('/login')} user={currentUser} />
+            <Header activeTab={isOwner ? 'profile' : 'network'} onLogout={() => navigate('/login')} user={currentUser} />
 
-            <main className="max-w-[1200px] w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+            <main className="max-w-[1200px] w-full mx-auto p-4 md:p-6 pb-24 md:pb-8 flex flex-col md:flex-row gap-6">
 
                 {/* Profile Info Sidebar */}
                 <aside className="md:w-80 shrink-0 space-y-6">

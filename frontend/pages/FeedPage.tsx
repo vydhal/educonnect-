@@ -16,14 +16,14 @@ interface FeedPost extends Post {
 
 // Reusable Components
 const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[550px] rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
+    <div className="relative bg-white dark:bg-gray-900 w-full md:max-w-[550px] h-full md:h-auto rounded-none md:rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:max-h-[90vh]">
+      <div className="px-6 py-5 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
         <h2 className="text-xl font-black">Criar Publicação</h2>
-        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
+        <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
       </div>
-      <div className="p-6 overflow-y-auto custom-scrollbar overflow-x-visible">
+      <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar overflow-x-visible flex-1">
         {children}
       </div>
     </div>
@@ -31,36 +31,64 @@ const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode
 );
 
 const InteractionModal: React.FC<{ title: string, onClose: () => void, children: React.ReactNode }> = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full max-w-[450px] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-      <div className="px-6 py-4 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+    <div className="relative bg-white dark:bg-gray-900 w-full md:max-w-[450px] rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom md:zoom-in duration-300">
+      <div className="px-6 py-5 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
         <h2 className="text-lg font-black">{title}</h2>
-        <button onClick={onClose} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><span className="material-symbols-outlined">close</span></button>
+        <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><span className="material-symbols-outlined">close</span></button>
       </div>
-      <div className="p-6">{children}</div>
+      <div className="p-6 pb-12 md:pb-6">{children}</div>
     </div>
   </div>
 );
 
-const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?: string }> = ({ id, name, type, avatar }) => {
+const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?: string, initialFollowing?: boolean }> = ({ id, name, type, avatar, initialFollowing = false }) => {
   const navigate = useNavigate();
+  const [followed, setFollowed] = useState(initialFollowing);
+  const [loading, setLoading] = useState(false);
+  const { showModal } = useModal();
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      await usersAPI.followUser(id);
+      setFollowed(!followed);
+    } catch (error: any) {
+      console.error('Follow failed', error);
+      showModal({ title: 'Erro', message: error.message || 'Não foi possível seguir esta unidade.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-2 group/item">
       <div
         onClick={() => navigate(`/profile/${id}`)}
         className="flex items-center gap-3 min-w-0 cursor-pointer group"
       >
         <div
-          className="size-9 bg-gray-100 rounded-lg shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all"
+          className="size-10 bg-gray-100 rounded-xl shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all duration-300"
           style={{ backgroundImage: `url(${avatar || `https://ui-avatars.com/api/?name=${name}&background=random`})` }}
         />
         <div className="min-w-0">
-          <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{name}</p>
-          <p className="text-[10px] text-gray-500">{type}</p>
+          <p className="text-xs font-black truncate group-hover:text-primary transition-colors uppercase tracking-tight">{name}</p>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest opacity-60">{type}</p>
         </div>
       </div>
-      <button className="border-2 border-primary text-primary hover:bg-primary text-xs font-bold py-1 px-3 rounded-full transition-all hover:text-white">Seguir</button>
+      <button 
+        onClick={handleFollow}
+        disabled={loading}
+        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+          followed 
+            ? 'bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500' 
+            : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white shadow-lg shadow-primary/10'
+        }`}
+      >
+        {loading ? '...' : (followed ? 'Seguindo' : 'Seguir')}
+      </button>
     </div>
   );
 };
@@ -289,9 +317,9 @@ const FeedPage: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
       <Header activeTab="home" onLogout={handleLogout} user={user} />
 
-      <main className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
-        {/* Left Sidebar */}
-        <aside className="lg:col-span-3 space-y-4">
+      <main className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-6 pb-24 md:pb-8">
+        {/* Left Sidebar - Hidden on mobile */}
+        <aside className="hidden lg:block lg:col-span-3 space-y-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden sticky top-20">
             <div className="h-16 bg-gradient-to-r from-primary to-blue-400"></div>
             <div className="px-4 pb-4 -mt-8 flex flex-col items-center">
@@ -357,11 +385,14 @@ const FeedPage: React.FC = () => {
 
         {/* Feed */}
         <div className="lg:col-span-6 space-y-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border">
-            <div className="flex gap-3 items-center">
-              <div className="size-11 rounded-full bg-cover bg-center shrink-0" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
-              <button onClick={() => setIsModalOpen(true)} className="w-full text-left bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 rounded-full px-5 py-3 text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700">
-                Compartilhe um projeto educacional ou aviso...
+          <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-xl p-4 md:p-5 shadow-sm border dark:border-gray-800">
+            <div className="flex gap-4 items-center">
+              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
+              <button 
+                onClick={() => setIsModalOpen(true)} 
+                className="flex-1 text-left bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-2xl px-5 py-3.5 text-xs md:text-sm font-medium transition-all border border-gray-100 dark:border-gray-700 shadow-inner"
+              >
+                No que você está pensando hoje?
               </button>
             </div>
           </div>
@@ -413,7 +444,7 @@ const FeedPage: React.FC = () => {
                   )}
                 </div>
                 <div className="px-4 pb-4">
-                  <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{renderContent(post.content)}</p>
+                  <div className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{renderContent(post.content)}</div>
                 </div>
 
                 {/* GALLERY / CAROUSEL */}
@@ -432,22 +463,25 @@ const FeedPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
-                    className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-center gap-1.5 py-3 text-[10px] md:text-sm font-black uppercase tracking-tight text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <span className="material-symbols-outlined">chat</span> {post.comments > 0 ? post.comments : 'Comentar'}
+                    <span className="material-symbols-outlined text-xl md:text-2xl">chat</span> 
+                    <span>{post.comments > 0 ? `(${post.comments})` : 'Comentar'}</span>
                   </button>
                   <button
                     onClick={() => setInteractionModal({ type: 'send', postId: post.id })}
-                    className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-center gap-1.5 py-3 text-[10px] md:text-sm font-black uppercase tracking-tight text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <span className="material-symbols-outlined">share</span> Enviar
+                    <span className="material-symbols-outlined text-xl md:text-2xl">share</span> 
+                    <span>Enviar</span>
                   </button>
                 </div>
               </article>
             )))}
         </div>
 
-        <aside className="lg:col-span-3 space-y-4">
+        {/* Right Sidebar - Hidden on mobile */}
+        <aside className="hidden lg:block lg:col-span-3 space-y-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border sticky top-20">
             <h3 className="font-bold text-sm mb-4">Escolas em destaque</h3>
             <div className="space-y-4">
@@ -459,6 +493,7 @@ const FeedPage: React.FC = () => {
                     name={school.name}
                     type={school.schoolType || 'Instituição'}
                     avatar={school.avatar}
+                    initialFollowing={school.isFollowing || false}
                   />
                 ))
               ) : (
@@ -569,15 +604,52 @@ const FeedPage: React.FC = () => {
       )}
 
       {interactionModal.type === 'send' && (
-        <InteractionModal title="Enviar para" onClose={() => setInteractionModal({ type: null, postId: null })}>
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex flex-col items-center gap-3 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all group">
-              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">chat_bubble</span>
-              <span className="text-sm font-bold">Mensagem Direta</span>
+        <InteractionModal title="Compartilhar" onClose={() => setInteractionModal({ type: null, postId: null })}>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
+            <button 
+              onClick={() => {
+                const url = window.location.href;
+                window.open(`https://api.whatsapp.com/send?text=Confira este post no EduConnect: ${url}`, '_blank');
+              }}
+              className="flex flex-col items-center gap-2 group transition-all"
+            >
+              <div className="size-14 md:size-16 rounded-2xl bg-emerald-50 content-center dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm">
+                <span className="material-symbols-outlined text-3xl filled">chat</span>
+              </div>
+              <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-emerald-500">WhatsApp</span>
             </button>
-            <button className="flex flex-col items-center gap-3 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all group">
-              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">link</span>
-              <span className="text-sm font-bold">Copiar Link</span>
+
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                showModal({ title: 'Copiado!', message: 'O link foi copiado para sua área de transferência.', type: 'success' });
+              }}
+              className="flex flex-col items-center gap-2 group transition-all"
+            >
+              <div className="size-14 md:size-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm">
+                <span className="material-symbols-outlined text-3xl">link</span>
+              </div>
+              <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-blue-500">Copiar Link</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: 'EduConnect',
+                    text: 'Confira este conteúdo no EduConnect!',
+                    url: window.location.href,
+                  }).catch(console.error);
+                } else {
+                  showModal({ title: 'Indisponível', message: 'Seu navegador não suporta compartilhamento nativo.', type: 'info' });
+                }
+              }}
+              className="flex flex-col items-center gap-2 group transition-all"
+            >
+              <div className="size-14 md:size-16 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-500 group-hover:bg-gray-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-all shadow-sm">
+                <span className="material-symbols-outlined text-3xl">ios_share</span>
+              </div>
+              <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white">Mais</span>
             </button>
           </div>
         </InteractionModal>

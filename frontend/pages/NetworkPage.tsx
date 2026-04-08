@@ -133,28 +133,47 @@ const NetworkPage: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
       <Header activeTab="network" onLogout={() => navigate('/login')} />
 
-      <main className="max-w-[1200px] mx-auto w-full p-6">
+      <main className="max-w-[1200px] mx-auto w-full p-4 md:p-6 pb-24 md:pb-8">
         <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-black text-[#0d121b] dark:text-white mb-2">Rede de Unidades</h1>
             <p className="text-gray-500">Explore e conecte-se com as instituições da rede municipal de Campina Grande.</p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-72">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+            <div className="relative flex-1 md:w-80">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white dark:bg-gray-800 border-none rounded-xl pl-10 pr-4 py-3 text-sm shadow-sm"
+                className="w-full h-14 bg-white dark:bg-gray-900 border-none rounded-2xl pl-12 pr-4 py-3 text-sm shadow-sm focus:ring-2 ring-primary/20 transition-all font-medium"
                 placeholder="Buscar escola..."
               />
             </div>
           </div>
         </header>
 
+        {/* Mobile Filter Tabs */}
+        <div className="lg:hidden flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2 mb-4">
+          {[
+            { label: 'Todas', value: 'TODAS', icon: 'apps' },
+            { label: 'Escolas', value: 'ESCOLA', icon: 'corporate_fare' },
+            { label: 'Creches', value: 'CRECHE', icon: 'child_care' },
+            { label: 'Professores', value: 'PROFESSOR', icon: 'person' }
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => { setFilterType(opt.value); setSelectedUnit(''); }}
+              className={`flex items-center gap-2 whitespace-nowrap px-6 py-3 rounded-2xl text-[10px] uppercase tracking-widest font-black transition-all border-2 ${filterType === opt.value ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white dark:bg-gray-900 text-gray-400 border-gray-100 dark:border-gray-800'}`}
+            >
+              <span className="material-symbols-outlined text-sm">{opt.icon}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filters */}
-          <aside className="lg:col-span-1 space-y-4">
+          {/* Filters - HIDDEN ON MOBILE */}
+          <aside className="hidden lg:block lg:col-span-1 space-y-4">
             <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border sticky top-24">
               <h3 className="font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">tune</span>
@@ -248,7 +267,7 @@ const NetworkPage: React.FC = () => {
                     </div>
                     <button
                       onClick={() => handleFollow(item.id)}
-                      className={`w-full mt-6 py-3 transition-all rounded-xl font-bold text-sm ${following.has(item.id) ? 'bg-gray-100 text-gray-600' : 'bg-gray-50 dark:bg-gray-800 hover:bg-primary hover:text-white text-primary'}`}
+                      className={`w-full mt-6 py-3.5 transition-all rounded-2xl font-black text-xs uppercase tracking-widest ${following.has(item.id) ? 'bg-gray-100 text-gray-400' : 'bg-primary/5 dark:bg-primary/10 hover:bg-primary hover:text-white text-primary'}`}
                     >
                       {following.has(item.id) ? 'Seguindo' : (item.role === 'PROFESSOR' ? 'Seguir Professor' : 'Seguir Unidade')}
                     </button>

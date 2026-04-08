@@ -26,7 +26,7 @@ const LandingPage: React.FC = () => {
             <a href="#escolas" className="text-sm font-medium hover:text-primary transition-colors">Escolas</a>
           </nav>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/')}
             className="bg-primary text-white text-sm font-bold px-6 py-2 rounded-lg hover:opacity-90 transition-all shadow-md active:scale-95"
           >
             Entrar

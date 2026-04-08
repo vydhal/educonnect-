@@ -204,45 +204,48 @@ const ProjectsPage: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
       <Header activeTab="projects" onLogout={() => navigate('/login')} />
 
-      <main className="max-w-[1200px] mx-auto w-full p-6">
+      <main className="max-w-[1200px] mx-auto w-full p-4 md:p-6 pb-24 md:pb-8">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 text-primary mb-3">
               <span className="material-symbols-outlined font-fill-1">tips_and_updates</span>
               <span className="text-xs font-black uppercase tracking-widest">Práticas Pedagógicas</span>
             </div>
-            <h1 className="text-4xl font-black text-[#0d121b] dark:text-white mb-2">Ideais que Inspiram</h1>
-            <p className="text-gray-500 max-w-2xl">Conecte-se com as experiências transformadoras de outros educadores e compartilhe sua história.</p>
+            <h1 className="text-3xl md:text-5xl font-black text-[#0d121b] dark:text-white mb-2">Ideais que Inspiram</h1>
+            <p className="text-gray-500 max-w-2xl text-sm md:text-lg">Conecte-se com as experiências transformadoras de outros educadores.</p>
           </div>
+          
+          {/* Desktop Button */}
           <button
             onClick={() => setIsSubmitOpen(true)}
-            className="bg-primary text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            className="hidden md:flex bg-primary text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all items-center gap-2"
           >
             <span className="material-symbols-outlined">edit_note</span>
             Criar Nova Inspiração
           </button>
+
         </header>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border mb-10 space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-3xl border mb-10 space-y-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1 w-full relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
               <input
                 type="text"
-                placeholder="Buscar por título, conteúdo ou tema..."
-                className="w-full h-12 bg-gray-50 dark:bg-gray-800 border-none rounded-xl pl-12 pr-4 focus:ring-2 ring-primary/20 transition-all font-medium"
+                placeholder="Buscar inspiração..."
+                className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl pl-12 pr-4 focus:ring-2 ring-primary/20 transition-all font-medium text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchProjects()}
               />
             </div>
-            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-2 px-2">
               {['TODOS', ...Object.keys(ETAPAS)].map(e => (
                 <button
                   key={e}
                   onClick={() => { setActiveEtapa(e); setActiveComponente('TODOS'); }}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${activeEtapa === e ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'}`}
+                  className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${activeEtapa === e ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white dark:bg-gray-900 text-gray-400 border-gray-50 dark:border-gray-800 hover:bg-gray-100'}`}
                 >
                   {e.replace('_', ' ')}
                 </button>
@@ -371,36 +374,36 @@ const ProjectsPage: React.FC = () => {
 
       {/* CREATE MODAL */}
       {isSubmitOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsSubmitOpen(false)} />
-          <div className="relative bg-white dark:bg-gray-900 w-full max-w-[1000px] rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
-            <div className="px-10 py-8 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="relative bg-white dark:bg-gray-900 w-full max-w-[1000px] h-full md:h-auto md:max-h-[90vh] rounded-none md:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col">
+            <div className="px-6 py-6 md:px-10 md:py-8 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
               <div>
-                <h2 className="text-3xl font-black">{isEditing ? 'Editar Inspiração' : 'Escrever Inspiração'}</h2>
-                <p className="text-sm text-gray-500">{isEditing ? 'Atualize sua prática pedagógica.' : 'Inspire outros professores com sua prática pedagógia.'}</p>
+                <h2 className="text-xl md:text-3xl font-black">{isEditing ? 'Editar Inspiração' : 'Escrever Inspiração'}</h2>
+                <p className="text-xs md:text-sm text-gray-500">{isEditing ? 'Atualize sua prática pedagógica.' : 'Inspire outros professores com sua prática pedagógia.'}</p>
               </div>
-              <button onClick={() => setIsSubmitOpen(false)} className="size-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined text-gray-400">close</span></button>
+              <button onClick={() => setIsSubmitOpen(false)} className="size-10 md:size-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined text-gray-400">close</span></button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-12 space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 md:space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Título da Inspiração</label>
+                    <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Título da Inspiração</label>
                     <input
                       required
-                      className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-6 font-bold"
+                      className="w-full h-12 md:h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 md:px-6 font-bold text-sm md:text-base"
                       placeholder="Ex: Transformando a Geometria com Origami"
                       value={formData.title}
                       onChange={e => setFormData({ ...formData, title: e.target.value })}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Etapa</label>
+                      <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Etapa</label>
                       <select
-                        className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-6 font-bold appearance-none"
+                        className="w-full h-12 md:h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 md:px-6 font-bold appearance-none text-sm"
                         value={formData.etapa}
                         onChange={e => setFormData({ ...formData, etapa: e.target.value, componente: (ETAPAS as any)[e.target.value][0] })}
                       >
@@ -408,9 +411,9 @@ const ProjectsPage: React.FC = () => {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Componente</label>
+                      <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Componente</label>
                       <select
-                        className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-6 font-bold appearance-none"
+                        className="w-full h-12 md:h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 md:px-6 font-bold appearance-none text-sm"
                         value={formData.componente}
                         onChange={e => setFormData({ ...formData, componente: e.target.value })}
                       >
@@ -420,10 +423,10 @@ const ProjectsPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Resumo Curto</label>
+                    <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Resumo Curto</label>
                     <textarea
                       required
-                      className="w-full h-24 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl p-6 font-medium resize-none"
+                      className="w-full h-32 md:h-24 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl p-5 md:p-6 font-medium resize-none text-sm"
                       placeholder="Um breve resumo do que se trata..."
                       value={formData.description}
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
@@ -432,14 +435,14 @@ const ProjectsPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Capa do Projeto</label>
-                  <div className="h-full min-h-[16rem] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
+                  <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Capa do Projeto</label>
+                  <div className="h-48 md:h-full min-h-[12rem] md:min-h-[16rem] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
                     {formData.image ? (
                       <img src={formData.image} className="w-full h-full object-cover" alt="" />
                     ) : (
                       <div className="p-8 text-center">
-                        <span className="material-symbols-outlined text-5xl text-gray-300 group-hover:text-primary mb-2">add_photo_alternate</span>
-                        <p className="text-xs font-bold text-gray-400">Clique para carregar uma capa impactante</p>
+                        <span className="material-symbols-outlined text-4xl md:text-5xl text-gray-300 group-hover:text-primary mb-2">add_photo_alternate</span>
+                        <p className="text-[10px] md:text-xs font-bold text-gray-400">Clique para carregar uma capa impactante</p>
                       </div>
                     )}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileUpload(e, true)} />
@@ -448,7 +451,7 @@ const ProjectsPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Conteúdo Completo (Blog)</label>
+                <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Conteúdo Completo (Blog)</label>
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-3xl overflow-hidden p-2 min-h-[300px]">
                   <EditorProvider>
                     <Editor
@@ -472,11 +475,11 @@ const ProjectsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Galeria de Fotos (Opcional)</label>
-                <div className="flex gap-4 flex-wrap">
+              <div className="space-y-4 pb-10 md:pb-0">
+                <label className="text-[10px] md:text-xs font-black uppercase text-gray-400 tracking-widest pl-1">Galeria de Fotos (Opcional)</label>
+                <div className="flex gap-3 md:gap-4 flex-wrap">
                   {formData.images.map((img, idx) => (
-                    <div key={idx} className="size-24 rounded-2xl overflow-hidden relative group">
+                    <div key={idx} className="size-20 md:size-24 rounded-2xl overflow-hidden relative group">
                       <img src={img} className="size-full object-cover" alt="" />
                       <button
                         type="button"
@@ -487,7 +490,7 @@ const ProjectsPage: React.FC = () => {
                       </button>
                     </div>
                   ))}
-                  <div className="size-24 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center relative hover:border-primary transition-colors cursor-pointer">
+                  <div className="size-20 md:size-24 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center relative hover:border-primary transition-colors cursor-pointer">
                     <span className="material-symbols-outlined text-gray-300">add</span>
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileUpload(e, false)} />
                   </div>
@@ -495,17 +498,17 @@ const ProjectsPage: React.FC = () => {
               </div>
             </form>
 
-            <div className="px-10 py-8 border-t dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex justify-end gap-4">
+            <div className="px-6 py-6 md:px-10 md:py-8 border-t dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex flex-col-reverse md:flex-row justify-end gap-3 md:gap-4">
               <button
                 type="button"
                 onClick={() => setIsSubmitOpen(false)}
-                className="px-8 py-4 font-black text-gray-500 hover:text-gray-700 transition-colors"
+                className="w-full md:w-auto px-8 py-3 md:py-4 font-black text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSubmit}
-                className="bg-primary text-white font-black px-12 py-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                className="w-full md:w-auto bg-primary text-white font-black px-12 py-3 md:py-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm md:text-base"
               >
                 {isEditing ? 'Salvar Alterações' : 'Publicar Inspiração'}
               </button>
@@ -516,70 +519,70 @@ const ProjectsPage: React.FC = () => {
 
       {/* DETAIL MODAL */}
       {isDetailOpen && selectedProject && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setIsDetailOpen(false)} />
-          <div className="relative bg-white dark:bg-gray-900 w-full max-w-[900px] rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[95vh]">
-            <div className="h-64 bg-gray-100 relative">
+          <div className="relative bg-white dark:bg-gray-900 w-full max-w-[900px] h-full md:h-auto md:max-h-[95vh] rounded-none md:rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col">
+            <div className="h-48 md:h-64 bg-gray-100 relative shrink-0">
               {selectedProject.image && <img src={selectedProject.image} className="w-full h-full object-cover" alt="" />}
-              <button onClick={() => setIsDetailOpen(false)} className="absolute top-6 right-6 size-12 bg-black/20 hover:bg-black/40 backdrop-blur rounded-2xl flex items-center justify-center text-white transition-all"><span className="material-symbols-outlined">close</span></button>
-              <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/60 to-transparent text-white">
-                <span className="px-3 py-1 bg-primary rounded-lg text-xs font-black uppercase mb-3 inline-block">{selectedProject.etapa}</span>
-                <h2 className="text-4xl font-black leading-tight">{selectedProject.title}</h2>
+              <button onClick={() => setIsDetailOpen(false)} className="absolute top-4 md:top-6 right-4 md:right-6 size-10 md:size-12 bg-black/20 hover:bg-black/40 backdrop-blur rounded-2xl flex items-center justify-center text-white transition-all"><span className="material-symbols-outlined">close</span></button>
+              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 bg-gradient-to-t from-black/80 to-transparent text-white">
+                <span className="px-3 py-1 bg-primary rounded-lg text-[10px] md:text-xs font-black uppercase mb-2 md:mb-3 inline-block">{selectedProject.etapa}</span>
+                <h2 className="text-2xl md:text-4xl font-black leading-tight line-clamp-2 md:line-clamp-none">{selectedProject.title}</h2>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-10 flex flex-col gap-12">
-              <div className="flex items-center gap-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl">
-                <img src={selectedProject.author.avatar || `https://ui-avatars.com/api/?name=${selectedProject.author.name}`} className="size-12 rounded-full" alt="" />
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8 md:gap-12">
+              <div className="flex items-center gap-4 p-4 md:p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl">
+                <img src={selectedProject.author.avatar || `https://ui-avatars.com/api/?name=${selectedProject.author.name}`} className="size-10 md:size-12 rounded-full" alt="" />
                 <div>
-                  <p className="font-black text-lg">{selectedProject.author.name}</p>
-                  <p className="text-sm text-gray-400 font-bold uppercase">{selectedProject.author.school || 'Rede Municipal'}</p>
+                  <p className="font-black text-sm md:text-lg">{selectedProject.author.name}</p>
+                  <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase">{selectedProject.author.school || 'Rede Municipal'}</p>
                 </div>
               </div>
 
               <div className="prose dark:prose-invert max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: selectedProject.content }} className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg" />
+                <div dangerouslySetInnerHTML={{ __html: selectedProject.content }} className="text-gray-700 dark:text-gray-300 leading-relaxed text-base md:text-lg" />
               </div>
 
               {selectedProject.images && selectedProject.images.length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="text-xl font-black">Galeria de Fotos</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <h4 className="text-lg md:text-xl font-black">Galeria de Fotos</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     {selectedProject.images.map((img: string, i: number) => (
-                      <img key={i} src={img} className="rounded-2xl w-full h-48 object-cover border" alt="" />
+                      <img key={i} src={img} className="rounded-2xl w-full h-32 md:h-48 object-cover border" alt="" />
                     ))}
                   </div>
                 </div>
               )}
 
-              <section className="pt-12 border-t dark:border-gray-800 space-y-8">
-                <h4 className="text-2xl font-black flex items-center gap-2">
+              <section className="pt-8 md:pt-12 border-t dark:border-gray-800 space-y-6 md:space-y-8 pb-10">
+                <h4 className="text-xl md:text-2xl font-black flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">forum</span>
                   Comentários ({selectedProject._count.comments})
                 </h4>
 
                 <form onSubmit={handleComment} className="relative">
                   <textarea
-                    className="w-full h-24 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl p-6 pr-20 resize-none font-medium"
+                    className="w-full h-24 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl p-5 md:p-6 pr-16 md:pr-20 resize-none font-medium text-sm md:text-base outline-none focus:ring-2 ring-primary/20 transition-all"
                     placeholder="O que achou desta inspiração?"
                     value={commentContent}
                     onChange={e => setCommentContent(e.target.value)}
                   />
-                  <button className="absolute right-4 bottom-4 size-12 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
-                    <span className="material-symbols-outlined">send</span>
+                  <button className="absolute right-3 bottom-3 md:right-4 md:bottom-4 size-10 md:size-12 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                    <span className="material-symbols-outlined text-xl">send</span>
                   </button>
                 </form>
 
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {selectedProject.comments?.map((comment: any) => (
-                    <div key={comment.id} className="flex gap-4">
-                      <img src={comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.name}`} className="size-10 rounded-full" alt="" />
-                      <div className="flex-1 bg-gray-50 dark:bg-gray-800 p-6 rounded-3xl">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-black text-sm">{comment.author.name}</p>
-                          <span className="text-[10px] text-gray-400 font-bold">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    <div key={comment.id} className="flex gap-3 md:gap-4">
+                      <img src={comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.name}`} className="size-8 md:size-10 rounded-full" alt="" />
+                      <div className="flex-1 bg-gray-50 dark:bg-gray-800 p-4 md:p-6 rounded-2xl md:rounded-3xl">
+                        <div className="flex justify-between items-center mb-1 md:mb-2">
+                          <p className="font-black text-xs md:text-sm">{comment.author.name}</p>
+                          <span className="text-[9px] md:text-[10px] text-gray-400 font-bold">{new Date(comment.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{comment.content}</p>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{comment.content}</p>
                       </div>
                     </div>
                   ))}

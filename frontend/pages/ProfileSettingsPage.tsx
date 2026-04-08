@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
 import { Header } from '../components/Header';
-import { useSettings } from '../contexts/SettingsContext'; // For theme toggle
+import { useSettings } from '../contexts/SettingsContext';
 import { ImageUpload } from '../components/ImageUpload';
 import { supportAPI } from '../api';
 
@@ -82,51 +81,61 @@ const ProfileSettingsPage: React.FC = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#f0f2f5] dark:bg-gray-900"><span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span></div>;
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
-            <Header activeTab="home" onLogout={handleLogout} user={user} />
+        <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#0d121b]">
+            <Header activeTab="profile" onLogout={handleLogout} user={user} />
 
-            <main className="max-w-[1000px] w-full mx-auto p-6">
-                <div className="flex flex-col md:flex-row gap-8">
+            <main className="max-w-[1100px] w-full mx-auto p-4 md:p-8 pb-32">
+                <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Tabs */}
-                    <aside className="md:w-64 flex-shrink-0">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border dark:border-gray-800 overflow-hidden sticky top-24">
-                            <div className="p-6 border-b dark:border-gray-800 flex flex-col items-center">
-                                <div className="size-24 rounded-full border-4 border-gray-50 dark:border-gray-800 bg-cover bg-center mb-4" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=random`})` }} />
-                                <h2 className="font-bold text-lg text-center dark:text-white">{user?.name}</h2>
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mt-1">{user?.role}</p>
+                    <aside className="lg:w-72 flex-shrink-0">
+                        <div className="bg-white dark:bg-gray-900 rounded-[32px] shadow-sm border dark:border-gray-800 overflow-hidden sticky top-24 border-gray-100">
+                            {/* Profile Header - HIDDEN ON MOBILE */}
+                            <div className="hidden lg:flex p-8 border-b dark:border-gray-800 flex-col items-center">
+                                <div className="size-24 rounded-[32px] border-4 border-gray-50 dark:border-gray-800 bg-cover bg-center mb-4 shadow-lg" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=random`})` }} />
+                                <h2 className="font-black text-lg text-center dark:text-white uppercase tracking-tight">{user?.name}</h2>
+                                <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">{user?.role}</p>
                             </div>
-                            <nav className="p-2 space-y-1">
+                            
+                            {/* Navigation */}
+                            <nav className="p-3 flex lg:flex-col gap-2 overflow-x-auto scrollbar-hide">
                                 <button
                                     onClick={() => setActiveTab('geral')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'geral' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                    className={`flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-[24px] text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'geral' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                 >
-                                    <span className="material-symbols-outlined">person</span> Geral
+                                    <span className="material-symbols-outlined text-sm font-fill-1">person</span> <span className="whitespace-nowrap">Geral</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('seguranca')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'seguranca' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                    className={`flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-[24px] text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'seguranca' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                 >
-                                    <span className="material-symbols-outlined">lock</span> Segurança
+                                    <span className="material-symbols-outlined text-sm font-fill-1">lock</span> <span className="whitespace-nowrap">Segurança</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('aparencia')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'aparencia' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                    className={`flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-[24px] text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'aparencia' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                 >
-                                    <span className="material-symbols-outlined">palette</span> Aparência
+                                    <span className="material-symbols-outlined text-sm font-fill-1">palette</span> <span className="whitespace-nowrap">Aparência</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('suporte')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'suporte' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                    className={`flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-[24px] text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'suporte' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                 >
-                                    <span className="material-symbols-outlined">help_center</span> FAQ e Tutoriais
+                                    <span className="material-symbols-outlined text-sm font-fill-1">help_center</span> <span className="whitespace-nowrap">Suporte</span>
+                                </button>
+                                
+                                <button
+                                    onClick={handleLogout}
+                                    className="lg:hidden flex-shrink-0 flex items-center gap-3 px-6 py-4 rounded-[24px] text-[11px] uppercase tracking-widest font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
+                                >
+                                    <span className="material-symbols-outlined text-sm font-fill-1">logout</span> <span className="whitespace-nowrap">Sair</span>
                                 </button>
                             </nav>
-                            <div className="p-4 border-t dark:border-gray-800">
+                            <div className="hidden lg:block p-6 border-t dark:border-gray-800">
                                 <button
                                     onClick={() => navigate(`/profile/${user?.id}`)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 dark:bg-gray-800 text-primary hover:bg-primary hover:text-white transition-all group"
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-[24px] text-[10px] uppercase tracking-widest font-black bg-gray-50 dark:bg-gray-800 text-primary hover:bg-primary hover:text-white transition-all group border border-gray-100 dark:border-gray-700"
                                 >
-                                    <span className="material-symbols-outlined text-sm transition-transform group-hover:scale-110">visibility</span> Ver Perfil Público
+                                    <span className="material-symbols-outlined text-sm transition-transform group-hover:scale-110">visibility</span> Ver Perfil
                                 </button>
                             </div>
                         </div>
@@ -134,134 +143,191 @@ const ProfileSettingsPage: React.FC = () => {
 
                     {/* Content Area */}
                     <div className="flex-1">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border dark:border-gray-800 p-8">
-                            <h1 className="text-2xl font-black mb-6 dark:text-white">
-                                {activeTab === 'geral' && 'Configurações Gerais'}
-                                {activeTab === 'seguranca' && 'Segurança da Conta'}
-                                {activeTab === 'aparencia' && 'Aparência e Tema'}
-                                {activeTab === 'suporte' && 'FAQ e Tutoriais'}
+                        <div className="bg-white dark:bg-gray-900 rounded-[32px] shadow-sm border dark:border-gray-800 p-8 lg:p-12 border-gray-100">
+                            <h1 className="text-3xl font-black mb-8 dark:text-white uppercase tracking-tighter">
+                                {activeTab === 'geral' && 'Configurações do Perfil'}
+                                {activeTab === 'seguranca' && 'Segurança & Acesso'}
+                                {activeTab === 'aparencia' && 'Experiência Visual'}
+                                {activeTab === 'suporte' && 'Central de Ajuda'}
                             </h1>
 
                             {successMsg && (
-                                <div className="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-green-600">check_circle</span>
-                                    {successMsg}
+                                <div className="bg-green-500 text-white px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg shadow-green-500/20 animate-in fade-in slide-in-from-top-2">
+                                    <span className="material-symbols-outlined">check_circle</span>
+                                    <p className="text-sm font-black uppercase tracking-widest">{successMsg}</p>
                                 </div>
                             )}
 
                             {errorMsg && (
-                                <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-red-600">error</span>
-                                    {errorMsg}
+                                <div className="bg-red-500 text-white px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 shadow-lg shadow-red-500/20 animate-in fade-in slide-in-from-top-2">
+                                    <span className="material-symbols-outlined">error</span>
+                                    <p className="text-sm font-black uppercase tracking-widest">{errorMsg}</p>
                                 </div>
                             )}
 
                             {activeTab === 'geral' && (
-                                <form onSubmit={handleUpdateProfile} className="space-y-6">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nome Completo</label>
-                                            <input
-                                                type="text"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none dark:text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Bio / Sobre Você</label>
-                                            <textarea
-                                                value={bio}
-                                                onChange={(e) => setBio(e.target.value)}
-                                                rows={3}
-                                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none dark:text-white resize-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto de Perfil</label>
-                                            <ImageUpload
-                                                currentImage={avatar}
-                                                onImageUploaded={setAvatar}
-                                            />
+                                <form onSubmit={handleUpdateProfile} className="space-y-8 animate-in fade-in duration-500">
+                                    <div className="grid grid-cols-1 gap-8">
+                                        <div className="flex flex-col md:flex-row gap-8 items-start">
+                                            <div className="w-full md:w-48 shrink-0">
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Avatar do Usuário</label>
+                                                <ImageUpload
+                                                    currentImage={avatar}
+                                                    onImageUploaded={setAvatar}
+                                                />
+                                            </div>
+                                            <div className="flex-1 w-full space-y-6">
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nome Completo</label>
+                                                    <input
+                                                        type="text"
+                                                        value={name}
+                                                        onChange={(e) => setName(e.target.value)}
+                                                        className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 focus:ring-2 focus:ring-primary/20 outline-none dark:text-white font-medium transition-all focus:bg-white"
+                                                        placeholder="Como você quer ser chamado?"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Biografia</label>
+                                                    <textarea
+                                                        value={bio}
+                                                        onChange={(e) => setBio(e.target.value)}
+                                                        rows={4}
+                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary/20 outline-none dark:text-white resize-none font-medium transition-all focus:bg-white"
+                                                        placeholder="Conte um pouco sobre sua trajetória na educação..."
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="pt-4 flex justify-end">
-                                        <button type="submit" className="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">Salvar Alterações</button>
+                                    <div className="pt-6 border-t dark:border-gray-800 flex justify-end">
+                                        <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">Atualizar Perfil</button>
                                     </div>
                                 </form>
                             )}
 
                             {activeTab === 'seguranca' && (
-                                <form onSubmit={handleUpdateProfile} className="space-y-6">
-                                    <div className="grid grid-cols-1 gap-6">
+                                <form onSubmit={handleUpdateProfile} className="space-y-8 animate-in fade-in duration-500">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nova Senha</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nova Senha</label>
                                             <input
                                                 type="password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none dark:text-white"
+                                                className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 focus:ring-2 focus:ring-primary/20 outline-none dark:text-white font-medium"
+                                                placeholder="••••••••"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Confirmar Senha</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Confirmar Senha</label>
                                             <input
                                                 type="password"
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none dark:text-white"
+                                                className="w-full h-14 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl px-5 focus:ring-2 focus:ring-primary/20 outline-none dark:text-white font-medium"
+                                                placeholder="••••••••"
                                             />
                                         </div>
                                     </div>
-                                    <div className="pt-4 flex justify-end">
-                                        <button type="submit" className="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all" disabled={!password}>Atualizar Senha</button>
+                                    <div className="pt-6 border-t dark:border-gray-800 flex justify-end">
+                                        <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all disabled:opacity-50" disabled={!password}>Mudar Senha</button>
                                     </div>
                                 </form>
                             )}
 
                             {activeTab === 'aparencia' && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                        <div className="flex items-center gap-4">
-                                            <div className="size-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                                <span className="material-symbols-outlined dark:text-white">dark_mode</span>
+                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        {/* Light Mode Card */}
+                                        <button 
+                                            onClick={() => darkMode && toggleDarkMode()}
+                                            className={`relative flex flex-col gap-4 p-6 rounded-[32px] border-2 transition-all group ${!darkMode ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-transparent'}`}
+                                        >
+                                            <div className="aspect-video w-full rounded-2xl bg-[#f6f6f8] border border-gray-200 shadow-inner overflow-hidden flex flex-col p-3 gap-2">
+                                                <div className="h-2.5 w-1/2 bg-white rounded-full" />
+                                                <div className="h-2.5 w-3/4 bg-white rounded-full opacity-50" />
+                                                <div className="mt-auto h-5 w-full bg-primary/20 rounded-lg" />
+                                            </div>
+                                            <div className="flex items-center justify-between px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-lg">light_mode</span>
+                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${!darkMode ? 'text-primary' : 'text-gray-400'}`}>Estilo Claro</span>
+                                                </div>
+                                                {!darkMode && <span className="material-symbols-outlined text-primary text-xl font-fill-1 scale-110">check_circle</span>}
+                                            </div>
+                                        </button>
+
+                                        {/* Dark Mode Card */}
+                                        <button 
+                                            onClick={() => !darkMode && toggleDarkMode()}
+                                            className={`relative flex flex-col gap-4 p-6 rounded-[32px] border-2 transition-all group ${darkMode ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-transparent'}`}
+                                        >
+                                            <div className="aspect-video w-full rounded-2xl bg-[#0d121b] border border-white/5 shadow-inner overflow-hidden flex flex-col p-3 gap-2">
+                                                <div className="h-2.5 w-1/2 bg-white/20 rounded-full" />
+                                                <div className="h-2.5 w-3/4 bg-white/10 rounded-full opacity-50" />
+                                                <div className="mt-auto h-5 w-full bg-primary/40 rounded-lg" />
+                                            </div>
+                                            <div className="flex items-center justify-between px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-lg">dark_mode</span>
+                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-primary' : 'text-gray-400'}`}>Estilo Escuro</span>
+                                                </div>
+                                                {darkMode && <span className="material-symbols-outlined text-primary text-xl font-fill-1 scale-110">check_circle</span>}
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    <div className="p-8 bg-gray-50 dark:bg-gray-800/50 rounded-[32px] border dark:border-gray-800 border-dashed border-2">
+                                        <div className="flex items-start gap-5">
+                                            <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+                                                <span className="material-symbols-outlined text-primary text-2xl font-fill-1">auto_awesome</span>
                                             </div>
                                             <div>
-                                                <h3 className="font-bold dark:text-white">Modo Escuro</h3>
-                                                <p className="text-sm text-gray-500">Alternar entre tema claro e escuro</p>
+                                                <h4 className="text-sm font-black dark:text-white uppercase tracking-tight">Preferência Visual Global</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Suas configurações de aparência serão sincronizadas em todos os seus dispositivos. Escolha o tema que melhor se adapta ao seu ambiente de trabalho e estudo.</p>
                                             </div>
                                         </div>
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} className="sr-only peer" />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                                        </label>
                                     </div>
                                 </div>
                             )}
 
                             {activeTab === 'suporte' && (
-                                <div className="space-y-6">
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Aqui você encontra as principais dúvidas respondidas e vídeos tutoriais sobre como usar as ferramentas da plataforma.</p>
+                                <div className="space-y-10 animate-in fade-in duration-500">
+                                    <div className="p-8 bg-primary/5 rounded-[32px] border border-primary/10">
+                                        <div className="flex items-start gap-5">
+                                            <span className="material-symbols-outlined text-primary text-4xl">live_help</span>
+                                            <div>
+                                                <h3 className="text-lg font-black text-primary uppercase tracking-tight">Central de Ajuda</h3>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Encontre respostas rápidas e tutoriais passo-a-passo para aproveitar o EduConnect ao máximo.</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                     
                                     {supportItems.length === 0 ? (
-                                        <div className="text-center py-10 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                            <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">inbox</span>
-                                            <p className="text-gray-500 text-sm">Nenhum FAQ ou tutorial disponível no momento.</p>
+                                        <div className="text-center py-20 bg-gray-50 dark:bg-gray-800 rounded-[32px] border-2 border-dashed dark:border-gray-800">
+                                            <span className="material-symbols-outlined text-6xl text-gray-200 mb-4">auto_stories</span>
+                                            <p className="text-gray-400 text-sm font-black uppercase tracking-widest">Aguardando conteúdos...</p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-6">
                                             {supportItems.map(item => (
-                                                <div key={item.id} className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className={`material-symbols-outlined text-sm ${item.type === 'FAQ' ? 'text-blue-500' : 'text-purple-500'}`}>
-                                                            {item.type === 'FAQ' ? 'help' : 'play_circle'}
-                                                        </span>
-                                                        <h4 className="font-bold text-gray-800 dark:text-white">{item.title}</h4>
+                                                <div key={item.id} className="bg-white dark:bg-gray-800 p-8 rounded-[32px] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`p-2 rounded-xl ${item.type === 'FAQ' ? 'bg-blue-50 text-blue-500' : 'bg-purple-50 text-purple-500'}`}>
+                                                                <span className="material-symbols-outlined text-xl">
+                                                                    {item.type === 'FAQ' ? 'quiz' : 'play_lesson'}
+                                                                </span>
+                                                            </div>
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest ${item.type === 'FAQ' ? 'text-blue-500' : 'text-purple-500'}`}>{item.type}</span>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{item.content}</p>
+                                                    <h4 className="text-xl font-black text-gray-800 dark:text-white mb-3 tracking-tight">{item.title}</h4>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{item.content}</p>
                                                     {item.link && (
-                                                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-bold mt-4 hover:underline">
-                                                            Acessar Link Externo <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                                                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-primary font-black uppercase tracking-widest mt-6 hover:gap-3 transition-all">
+                                                            Acessar Conteúdo <span className="material-symbols-outlined text-sm">arrow_right_alt</span>
                                                         </a>
                                                     )}
                                                 </div>

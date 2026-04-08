@@ -30,8 +30,9 @@ const App: React.FC = () => {
         <Router>
         <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-gray-100">
           <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/about" element={<LandingPage />} />
+            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/profile-selection" element={<ProfileSelectionPage />} />
             <Route path="/register/:role" element={<RegistrationPage />} />

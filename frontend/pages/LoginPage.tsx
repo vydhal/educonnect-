@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
 import { authAPI } from '../api';
@@ -14,6 +13,17 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-login redirect if token exists
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Small delay or direct check? Direct is faster.
+      // We could verify token here, but simple redirect is usually enough 
+      // as the FeedPage will handle invalid tokens by redirecting back.
+      navigate('/feed', { replace: true });
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,9 +107,9 @@ const LoginPage: React.FC = () => {
             </div>
             <h1 className="text-3xl font-black text-[#0d121b] mb-2">Acesse sua conta</h1>
             <p className="text-gray-500">Entre com suas credenciais da rede municipal.</p>
-            <button onClick={() => navigate('/')} className="text-sm text-primary font-bold hover:underline mt-2 flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">arrow_back</span>
-              Voltar para o início
+            <button onClick={() => navigate('/about')} className="text-sm text-primary font-black uppercase tracking-widest hover:underline mt-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">info</span>
+              Saiba mais sobre a plataforma
             </button>
           </header>
 

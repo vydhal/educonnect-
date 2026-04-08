@@ -41,18 +41,19 @@ export const ReactionButton: React.FC<ReactionButtonProps> = ({ postId, currentU
         >
             {/* Popover Reactions */}
             {showReactions && (
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 shadow-xl rounded-full p-2 flex gap-2 animate-in fade-in zoom-in duration-200 border dark:border-gray-700 z-10">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 mb-2 bg-white dark:bg-gray-800 shadow-2xl rounded-full p-1.5 md:p-2 flex gap-1 md:gap-2 animate-in fade-in zoom-in duration-200 border dark:border-gray-700 z-[110]">
                     {REACTIONS.map((reaction) => (
                         <button
                             key={reaction.type}
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 onReact(reaction.type);
                                 setShowReactions(false);
                             }}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-transform hover:scale-125 tooltip"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-transform hover:scale-125 active:scale-90"
                             title={reaction.label}
                         >
-                            <span className={`material-symbols-outlined text-2xl ${reaction.color} filled`}>
+                            <span className={`material-symbols-outlined text-xl md:text-2xl ${reaction.color} filled`}>
                                 {reaction.icon}
                             </span>
                         </button>
@@ -62,18 +63,29 @@ export const ReactionButton: React.FC<ReactionButtonProps> = ({ postId, currentU
 
             {/* Main Button */}
             <button
-                onClick={() => onReact(currentUserReaction ? currentUserReaction : 'LIKE')}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${currentUserReaction
+                onClick={() => {
+                    // On mobile, first click shows reactions if not shown
+                    if (window.innerWidth < 768 && !showReactions) {
+                        setShowReactions(true);
+                        return;
+                    }
+                    onReact(currentUserReaction ? currentUserReaction : 'LIKE');
+                }}
+                className={`flex items-center gap-1.5 md:gap-2 px-2 py-2 md:py-1 rounded-lg transition-colors whitespace-nowrap ${currentUserReaction
                         ? currentReaction?.color
                         : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
                     }`}
             >
-                <span className={`material-symbols-outlined ${currentUserReaction ? 'filled' : ''}`}>
+                <span className={`material-symbols-outlined text-xl md:text-2xl ${currentUserReaction ? 'filled' : ''}`}>
                     {currentReaction ? currentReaction.icon : 'thumb_up'}
                 </span>
-                <span className="font-medium">
+                <span className="font-black text-[10px] md:text-sm uppercase tracking-tight">
                     {currentReaction ? currentReaction.label : 'Curtir'}
-                    {likesCount > 0 && ` (${likesCount})`}
+                    {likesCount > 0 && (
+                        <span className="ml-1 opacity-70">
+                             ({likesCount})
+                        </span>
+                    )}
                 </span>
             </button>
         </div>
