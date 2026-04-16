@@ -91,7 +91,14 @@ export const authAPI = {
 
 // Posts API
 export const postsAPI = {
-  getPosts: () => request('/posts'),
+  getPosts: (filters?: { tag?: string; search?: string }) => {
+    if (!filters) return request('/posts');
+    const searchParams = new URLSearchParams();
+    if (filters.tag) searchParams.append('tag', filters.tag);
+    if (filters.search) searchParams.append('search', filters.search);
+    const queryString = searchParams.toString();
+    return request(`/posts${queryString ? `?${queryString}` : ''}`);
+  },
   getPost: (id: string) => request(`/posts/${id}`),
   createPost: (data: { content: string; image?: string; images?: string[] }) =>
     request('/posts', {
@@ -108,10 +115,19 @@ export const postsAPI = {
       method: 'POST',
       body: JSON.stringify({ type }),
     }),
-  addComment: (id: string, data: { content: string }) =>
-    request(`/posts/${id}/comments`, {
+  addComment: (postId: string, data: { content: string }) =>
+    request(`/posts/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+  updateComment: (postId: string, commentId: string, data: { content: string }) =>
+    request(`/posts/${postId}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteComment: (postId: string, commentId: string) =>
+    request(`/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
     }),
   deletePost: (id: string) =>
     request(`/posts/${id}`, {
@@ -121,7 +137,22 @@ export const postsAPI = {
 
 // Users API
 export const usersAPI = {
-  getUsers: (role?: string) => request(`/users${role ? `?role=${role}` : ''}`),
+  getUsers: (params?: string | Record<string, any>) => {
+    if (!params) return request('/users');
+    
+    if (typeof params === 'string') {
+      // Compatibility with strings
+      const query = params.includes('=') ? params : `role=${params}`;
+      return request(`/users?${query}`);
+    }
+
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, value);
+    });
+    
+    return request(`/users?${searchParams.toString()}`);
+  },
   getUser: (id: string) => request(`/users/${id}`),
   followUser: (id: string) =>
     request(`/users/${id}/follow`, {
@@ -131,7 +162,7 @@ export const usersAPI = {
   getFollowing: (id: string) => request(`/users/${id}/following`),
   getFeaturedSchools: () => request('/users/featured-schools'),
   getUserProfile: (id: string) => request(`/users/${id}`),
-  searchUsers: (query: string) => request(`/users/search?q=${query}`),
+  searchUsers: (query: string) => request(`/users/search/${query}`), // Fixed URL structure
 };
 
 // Moderation API
@@ -248,10 +279,23 @@ export const adminAPI = {
   }
 };
 
+// Badge Types API
+export const badgeTypesAPI = {
+  getBadgeTypes: () => request('/badge-types'),
+  createBadgeType: (data: { name: string; icon: string; description?: string; color?: string }) =>
+    request('/badge-types', { method: 'POST', body: JSON.stringify(data) }),
+  updateBadgeType: (id: string, data: any) =>
+    request(`/badge-types/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteBadgeType: (id: string) =>
+    request(`/badge-types/${id}`, { method: 'DELETE' }),
+};
+
 // Social API
 export const socialAPI = {
-  giveBadge: (receiverId: string, type: 'PROATIVO' | 'ESPECIAL' | 'HARMONIOSO') =>
-    request(`/social/badge/${receiverId}`, { method: 'POST', body: JSON.stringify({ type }) }),
+  giveBadge: (receiverId: string, badgeTypeId: string) =>
+    request(`/social/badge/${receiverId}`, { method: 'POST', body: JSON.stringify({ badgeTypeId }) }),
+  removeBadge: (receiverId: string, badgeTypeId: string) =>
+    request(`/social/badge/${receiverId}/${badgeTypeId}`, { method: 'DELETE' }),
   getBadges: (userId: string) => request(`/social/badges/${userId}`),
 
   recordProfileView: (profileId: string) => request(`/social/profile-view/${profileId}`, { method: 'POST' }),
@@ -269,6 +313,14 @@ export const socialAPI = {
     request('/social/events', { method: 'POST', body: JSON.stringify(data) }),
   deleteEvent: (id: string) =>
     request(`/social/events/${id}`, { method: 'DELETE' }),
+
+  // Friendship
+  sendFriendRequest: (id: string) => request(`/social/friend-request/${id}`, { method: 'POST' }),
+  updateFriendRequest: (id: string, status: 'ACCEPTED' | 'REJECTED') => 
+    request(`/social/friend-request/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  getPendingFriendRequests: () => request('/social/friend-requests/pending'),
+  getFriends: (userId: string) => request(`/social/friends/${userId}`),
+  removeFriend: (friendId: string) => request(`/social/friend/${friendId}`, { method: 'DELETE' }),
 };
 
 export const uploadAPI = {
@@ -298,4 +350,37 @@ export const supportAPI = {
   createSupportItem: (data: any) => request('/support', { method: 'POST', body: JSON.stringify(data) }),
   updateSupportItem: (id: string, data: any) => request(`/support/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteSupportItem: (id: string) => request(`/support/${id}`, { method: 'DELETE' }),
+};
+
+export const notificationsAPI = {
+  getNotifications: () => request('/notifications'),
+  markAsRead: (id: string) => request(`/notifications/${id}/read`, { method: 'PUT' }),
+  markAllAsRead: () => request('/notifications/read-all', { method: 'PUT' }),
+};
+
+// External System Integration (Educampina)
+export const externalAPI = {
+    getMilestones: async (): Promise<any[]> => {
+        // Mocking with data from notifications.js structure
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve([
+                    {
+                        id: 'm1',
+                        title: "🚀 Marca de 10.000 Acessos!",
+                        message: "Incrível! Alcançamos a marca de 10.000 acessos no Portal EduCampina! Obrigado por fazer parte dessa jornada de transformação educacional. 🚀À vocês, Gestores, Secretários e Professores, nossa gratidão! 🫶",
+                        type: "celebration",
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'm2',
+                        title: "🎉 36.000 Estudantes!",
+                        message: "Uma marca histórica! Hoje o EduCampina orgulhosamente atende mais de 36.000 estudantes efetivados. Juntos, estamos construindo o futuro da educação! 🏫✨",
+                        type: "celebration",
+                        createdAt: new Date().toISOString()
+                    }
+                ]);
+            }, 500);
+        });
+    }
 };

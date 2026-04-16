@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { postsAPI, authAPI, usersAPI, socialAPI } from '../api';
+import { postsAPI, authAPI, usersAPI, socialAPI, externalAPI } from '../api';
 import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
+import { RichCommentInput } from '../components/RichCommentInput';
+import { IMAGES } from '../constants';
+import { PostItem } from '../components/PostItem';
 import { Header } from '../components/Header';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { useModal } from '../contexts/ModalContext';
@@ -49,46 +52,91 @@ const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?:
   const [loading, setLoading] = useState(false);
   const { showModal } = useModal();
 
+  useEffect(() => {
+    setFollowed(initialFollowing);
+  }, [initialFollowing]);
+
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setLoading(true);
     try {
-      await usersAPI.followUser(id);
-      setFollowed(!followed);
+      const res = await usersAPI.followUser(id);
+      setFollowed(res.following);
     } catch (error: any) {
       console.error('Follow failed', error);
-      showModal({ title: 'Erro', message: error.message || 'Não foi possível seguir esta unidade.', type: 'error' });
+      showModal({ title: 'Erro', message: error.message || 'Não foi possível favoritar esta unidade.', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-between gap-2 group/item">
+    <div className="flex items-center justify-between gap-3 group/item">
       <div
         onClick={() => navigate(`/profile/${id}`)}
-        className="flex items-center gap-3 min-w-0 cursor-pointer group"
+        className="flex items-center gap-3 min-w-0 cursor-pointer group flex-1"
       >
         <div
           className="size-10 bg-gray-100 rounded-xl shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all duration-300"
-          style={{ backgroundImage: `url(${avatar || `https://ui-avatars.com/api/?name=${name}&background=random`})` }}
+          style={{ backgroundImage: `url(${avatar || IMAGES.DEFAULT_AVATAR})` }}
         />
-        <div className="min-w-0">
-          <p className="text-xs font-black truncate group-hover:text-primary transition-colors uppercase tracking-tight">{name}</p>
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest opacity-60">{type}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-black truncate group-hover:text-primary transition-colors uppercase tracking-tight leading-tight">{name}</p>
+          <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest opacity-60 truncate">{type}</p>
         </div>
       </div>
       <button 
         onClick={handleFollow}
         disabled={loading}
-        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
           followed 
-            ? 'bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500' 
+            ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100' 
             : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white shadow-lg shadow-primary/10'
         }`}
       >
-        {loading ? '...' : (followed ? 'Seguindo' : 'Seguir')}
+        {loading ? '...' : (followed ? 'Favoritado' : 'Favoritar')}
       </button>
+    </div>
+  );
+};
+
+const MilestonesWidget: React.FC = () => {
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const data = await externalAPI.getMilestones();
+        setMilestones(data);
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetch();
+  }, []);
+
+  if (loading) return <div className="animate-pulse h-20 bg-gray-100 dark:bg-gray-800 rounded-xl mb-4"></div>;
+  if (milestones.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 mb-4 overflow-hidden relative group">
+      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <span className="material-symbols-outlined text-6xl text-primary rotate-12">auto_awesome</span>
+      </div>
+      
+      <h3 className="font-bold text-xs mb-4 flex items-center gap-2 text-primary uppercase tracking-wider">
+        <span className="material-symbols-outlined text-sm">celebration</span>
+        Marcos da Rede
+      </h3>
+
+      <div className="space-y-4">
+        {milestones.map(m => (
+          <div key={m.id} className="relative z-10 bg-primary/5 dark:bg-primary/20 p-3 rounded-xl border border-primary/10">
+            <h4 className="text-xs font-black text-primary mb-1">{m.title}</h4>
+            <p className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed italic line-clamp-2">"{m.message}"</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -107,6 +155,7 @@ const FeedPage: React.FC = () => {
   const [activePostComments, setActivePostComments] = useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [editingComment, setEditingComment] = useState<any>(null);
   const [recentVisitors, setRecentVisitors] = useState<any[]>([]);
   const [trendingTags, setTrendingTags] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -135,7 +184,7 @@ const FeedPage: React.FC = () => {
     author: apiPost.author.name,
     authorId: apiPost.author.id,
     authorTitle: apiPost.author.school || (apiPost.author.role === 'ESCOLA' ? 'Instituição' : 'Educador'),
-    authorAvatar: apiPost.author.avatar || `https://ui-avatars.com/api/?name=${apiPost.author.name}&background=random`,
+    authorAvatar: apiPost.author.avatar || IMAGES.DEFAULT_AVATAR,
     content: apiPost.content,
     timestamp: timeAgo(apiPost.createdAt),
     likes: apiPost.likes,
@@ -147,9 +196,10 @@ const FeedPage: React.FC = () => {
     userReaction: apiPost.userReaction
   });
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (filters?: { tag?: string, search?: string }) => {
     try {
-      const data = await postsAPI.getPosts();
+      setLoading(true);
+      const data = await postsAPI.getPosts(filters);
       setPosts(data.map(formatPost));
     } catch (error) {
       console.error('Failed to fetch posts', error);
@@ -158,20 +208,25 @@ const FeedPage: React.FC = () => {
     }
   };
 
-  const fetchFeaturedSchools = async () => {
+  const fetchFavoriteSchools = async (userId: string) => {
     try {
-      const data = await usersAPI.getFeaturedSchools();
+      const data = await usersAPI.getFollowing(userId);
       setFeaturedSchools(data);
     } catch (error) {
-      console.error('Failed to fetch featured schools', error);
+      console.error('Failed to fetch favorite schools', error);
     }
   };
 
   const [user, setUser] = useState<any>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTag = searchParams.get('tag');
+  const searchQuery = searchParams.get('search');
 
   useEffect(() => {
-    fetchPosts();
-    fetchFeaturedSchools();
+    fetchPosts({ 
+      tag: activeTag || undefined, 
+      search: searchQuery || undefined 
+    });
     socialAPI.getTrendingTags().then(setTrendingTags).catch(console.error);
     socialAPI.getEvents().then(setEvents).catch(console.error);
 
@@ -180,10 +235,11 @@ const FeedPage: React.FC = () => {
         setUser(profile);
         if (profile) {
           socialAPI.getRecentVisitors().then(setRecentVisitors).catch(console.error);
+          fetchFavoriteSchools(profile.id);
         }
       })
       .catch(err => console.error('Failed to load profile', err));
-  }, []);
+  }, [activeTag, searchQuery, setSearchParams]);
 
   // Load comments when modal opens
   useEffect(() => {
@@ -261,21 +317,49 @@ const FeedPage: React.FC = () => {
     });
   };
 
-  const handleSendComment = async () => {
-    if (!commentText.trim() || !interactionModal.postId) return;
+  const handleCommentSubmit = async (content: string) => {
+    if (!content.trim() || !interactionModal.postId) return;
     try {
-      const newComment = await postsAPI.addComment(interactionModal.postId, { content: commentText });
+      const newComment = await postsAPI.addComment(interactionModal.postId, { content });
       setActivePostComments(prev => [newComment, ...prev]);
-      setCommentText('');
       fetchPosts();
     } catch (error) {
       console.error('Failed to send comment', error);
+      showModal({ title: 'Erro', message: 'Falha ao enviar comentário.', type: 'error' });
+    }
+  };
+
+  const handleUpdateComment = async (content: string) => {
+    if (!editingComment || !interactionModal.postId) return;
+    try {
+      const updated = await postsAPI.updateComment(interactionModal.postId, editingComment.id, { content });
+      setActivePostComments(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setEditingComment(null);
+    } catch (error) {
+      console.error('Failed to update comment', error);
+      showModal({ title: 'Erro', message: 'Falha ao atualizar comentário.', type: 'error' });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!interactionModal.postId) return;
+    
+    // Simple confirmation using window.confirm for now, or use showModal if complex logic needed
+    if (!window.confirm('Tem certeza que deseja excluir este comentário?')) return;
+
+    try {
+      await postsAPI.deleteComment(interactionModal.postId, commentId);
+      setActivePostComments(prev => prev.filter(c => c.id !== commentId));
+      setPosts(prev => prev.map(p => p.id === interactionModal.postId ? { ...p, comments: p.comments - 1 } : p));
+    } catch (error) {
+      console.error('Failed to delete comment', error);
+      showModal({ title: 'Erro', message: 'Falha ao excluir comentário.', type: 'error' });
     }
   };
 
   const renderContent = (content: string) => {
-    // Regex for mentions: @word
-    const parts = content.split(/(@[\w\u00C0-\u00FF]+)/g);
+    // Regex for mentions: @[Name](id) or simple @word AND Hashtags: #word
+    const parts = content.split(/(@\[[^\]]+\]\([^\)]+\)|@[\w\u00C0-\u00FF]+|#[\w\u00C0-\u00FF]+)/g);
 
     // Check for YouTube links
     const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -300,14 +384,41 @@ const FeedPage: React.FC = () => {
 
     return (
       <>
-        <p className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">
+        <div className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">
           {parts.map((part, index) => {
-            if (part.startsWith('@')) {
+            if (part.startsWith('@[')) {
+              const match = part.match(/@\[([^\]]+)\]\(([^\)]+)\)/);
+              if (match) {
+                return (
+                  <span 
+                    key={index} 
+                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${match[2]}`); }} 
+                    className="text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    {match[1]}
+                  </span>
+                );
+              }
+            } else if (part.startsWith('@')) {
               return <span key={index} className="text-primary font-bold hover:underline cursor-pointer">{part}</span>;
+            } else if (part.startsWith('#')) {
+              const tag = part.substring(1);
+              return (
+                <span 
+                  key={index} 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setSearchParams({ tag });
+                  }} 
+                  className="text-primary font-black hover:bg-primary/10 px-1 rounded transition-colors cursor-pointer"
+                >
+                  {part}
+                </span>
+              );
             }
             return part;
           })}
-        </p>
+        </div>
         {youtubeEmbed}
       </>
     );
@@ -323,7 +434,7 @@ const FeedPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden sticky top-20">
             <div className="h-16 bg-gradient-to-r from-primary to-blue-400"></div>
             <div className="px-4 pb-4 -mt-8 flex flex-col items-center">
-              <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
+              <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${user?.avatar || IMAGES.DEFAULT_AVATAR})` }} />
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
               <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
               {user?.school && <p className="text-xs font-bold text-primary mt-1 text-center">{user.school}</p>}
@@ -369,9 +480,13 @@ const FeedPage: React.FC = () => {
                 <div className="space-y-3">
                   {trendingTags.length > 0 ? (
                     trendingTags.map(tag => (
-                      <button key={tag.name} className="flex items-center justify-between w-full group">
+                      <button 
+                        key={tag.name} 
+                        onClick={() => setSearchParams({ tag: tag.name })}
+                        className="flex items-center justify-between w-full group text-left"
+                      >
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">#{tag.name}</span>
-                        <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-full">{tag.count} posts</span>
+                        <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-full group-hover:bg-primary/20 group-hover:text-primary transition-all">{tag.count} posts</span>
                       </button>
                     ))
                   ) : (
@@ -385,6 +500,30 @@ const FeedPage: React.FC = () => {
 
         {/* Feed */}
         <div className="lg:col-span-6 space-y-4">
+          {/* Active Filter Indicator */}
+          {(activeTag || searchQuery) && (
+            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4 duration-300 border border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="size-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined">{activeTag ? 'tag' : 'search'}</span>
+                </div>
+                <div>
+                  <p className="text-[10px] text-primary font-black uppercase tracking-widest">Filtrando por</p>
+                  <p className="text-sm font-bold dark:text-white">
+                    {activeTag ? `#${activeTag}` : `"${searchQuery}"`}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSearchParams({})}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 rounded-xl text-xs font-black transition-all shadow-sm border border-gray-100 dark:border-gray-700"
+              >
+                Limpar Filtro
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          )}
+
           <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-xl p-4 md:p-5 shadow-sm border dark:border-gray-800">
             <div className="flex gap-4 items-center">
               <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
@@ -481,50 +620,66 @@ const FeedPage: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Hidden on mobile */}
-        <aside className="hidden lg:block lg:col-span-3 space-y-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border sticky top-20">
-            <h3 className="font-bold text-sm mb-4">Escolas em destaque</h3>
-            <div className="space-y-4">
-              {featuredSchools.length > 0 ? (
-                featuredSchools.map(school => (
-                  <SchoolSuggest
-                    key={school.id}
-                    id={school.id}
-                    name={school.name}
-                    type={school.schoolType || 'Instituição'}
-                    avatar={school.avatar}
-                    initialFollowing={school.isFollowing || false}
-                  />
-                ))
-              ) : (
-                <div className="text-xs text-gray-400 py-4 text-center">Nenhuma escola em destaque no momento.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Eventos da Semana Widget */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border sticky top-[340px]">
-            <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
-              Eventos da Semana
-              <span className="material-symbols-outlined text-primary text-sm">calendar_month</span>
-            </h3>
-            <div className="space-y-4">
-              {events.length > 0 ? (
-                events.map(event => (
-                  <div key={event.id} className="flex gap-3 group cursor-pointer" onClick={() => event.link && window.open(event.link, '_blank')}>
-                    <div className="size-12 shrink-0 bg-blue-50 dark:bg-primary/10 rounded-xl flex flex-col items-center justify-center p-1 border border-blue-100 dark:border-primary/20 group-hover:bg-primary group-hover:text-white transition-all">
-                      <span className="text-[10px] font-bold uppercase">{new Date(event.date).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                      <span className="text-lg font-black leading-none">{new Date(event.date).getDate()}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{event.name}</p>
-                      <p className="text-[10px] text-gray-500">{new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • {event.link ? 'Online' : 'Presencial'}</p>
-                    </div>
+        <aside className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-20 space-y-4">
+            <MilestonesWidget />
+            
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+              <h3 className="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm text-primary">favorite</span>
+                Minhas Unidades Favoritas
+              </h3>
+              <div className="space-y-4">
+                {featuredSchools.length > 0 ? (
+                  featuredSchools.map(school => (
+                    <SchoolSuggest
+                      key={school.id}
+                      id={school.id}
+                      name={school.name}
+                      type={school.schoolType || 'Instituição'}
+                      avatar={school.avatar}
+                      initialFollowing={true}
+                    />
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <span className="material-symbols-outlined text-3xl text-gray-200">explore</span>
+                    <p className="text-[10px] text-gray-400 font-medium">Você ainda não favoritou nenhuma unidade.</p>
+                    <button 
+                      onClick={() => navigate('/network')}
+                      className="text-[10px] font-black text-primary hover:underline"
+                    >
+                      Explorar Unidades
+                    </button>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-gray-400 italic text-center py-4">Nenhum evento programado.</p>
-              )}
+                )}
+              </div>
+            </div>
+
+            {/* Eventos da Semana Widget */}
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+              <h3 className="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4 flex items-center justify-between">
+                <span>Eventos da Semana</span>
+                <span className="material-symbols-outlined text-primary text-sm">calendar_month</span>
+              </h3>
+              <div className="space-y-4">
+                {events.length > 0 ? (
+                  events.map(event => (
+                    <div key={event.id} className="flex gap-3 group cursor-pointer" onClick={() => event.link && window.open(event.link, '_blank')}>
+                      <div className="size-12 shrink-0 bg-blue-50 dark:bg-primary/10 rounded-xl flex flex-col items-center justify-center p-1 border border-blue-100 dark:border-primary/20 group-hover:bg-primary group-hover:text-white transition-all">
+                        <span className="text-[10px] font-bold uppercase">{new Date(event.date).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                        <span className="text-lg font-black leading-none">{new Date(event.date).getDate()}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{event.name}</p>
+                        <p className="text-[10px] text-gray-500">{new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • {event.link ? 'Online' : 'Presencial'}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-gray-400 italic text-center py-4">Nenhum evento programado.</p>
+                )}
+              </div>
             </div>
           </div>
         </aside>
@@ -575,29 +730,52 @@ const FeedPage: React.FC = () => {
                     <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none text-sm w-full">
                       <div className="flex justify-between items-center mb-1">
                         <p className="font-bold text-xs">{comment.author.name}</p>
-                        <span className="text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</span>
+                          {user && (user.id === comment.author.id || user.role === 'ADMIN') && (
+                            <div className="flex gap-1">
+                               <button 
+                                 onClick={() => setEditingComment(comment)}
+                                 className="text-gray-400 hover:text-primary transition-colors"
+                                 title="Editar"
+                               >
+                                 <span className="material-symbols-outlined text-xs">edit</span>
+                               </button>
+                               <button 
+                                 onClick={() => handleDeleteComment(comment.id)}
+                                 className="text-gray-400 hover:text-red-500 transition-colors"
+                                 title="Excluir"
+                               >
+                                 <span className="material-symbols-outlined text-xs">delete</span>
+                               </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p>{comment.content}</p>
+                      <div className="text-gray-700 dark:text-gray-300">{renderContent(comment.content)}</div>
                     </div>
                   </div>
                 ))
               )}
             </div>
-            <div className="flex gap-2 mt-4 pt-4 border-t dark:border-gray-800">
-              <input
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
-                className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-xl px-4 py-2 text-sm"
-                placeholder="Escreva um comentário..."
+            <div className="mt-4 pt-4 border-t dark:border-gray-800">
+              {editingComment ? (
+                <div className="bg-primary/5 p-3 rounded-2xl mb-2 flex justify-between items-center animate-in slide-in-from-top-2 duration-300">
+                  <span className="text-xs font-bold text-primary italic">Editando comentário...</span>
+                  <button onClick={() => setEditingComment(null)} className="text-xs font-black text-gray-500 hover:text-red-500">Cancelar</button>
+                </div>
+              ) : null}
+              
+              <RichCommentInput 
+                onSubmit={editingComment ? handleUpdateComment : handleCommentSubmit}
+                userAvatar={user?.avatar}
+                initialContent={editingComment?.content || ''}
+                placeholder={editingComment ? "Edite seu comentário..." : "Escreva um comentário..."}
+                submitLabel={editingComment ? "Salvar" : "Enviar"}
+                autoFocus={!!editingComment}
+                onCancel={editingComment ? () => setEditingComment(null) : undefined}
+                key={editingComment ? `edit-${editingComment.id}` : 'new-comment'}
               />
-              <button
-                onClick={handleSendComment}
-                disabled={!commentText.trim()}
-                className={`p-2 rounded-xl transition-colors ${commentText.trim() ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}`}
-              >
-                <span className="material-symbols-outlined">send</span>
-              </button>
             </div>
           </div>
         </InteractionModal>
@@ -608,8 +786,8 @@ const FeedPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
             <button 
               onClick={() => {
-                const url = window.location.href;
-                window.open(`https://api.whatsapp.com/send?text=Confira este post no EduConnect: ${url}`, '_blank');
+                const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
+                window.open(`https://api.whatsapp.com/send?text=Confira este post no EduConnect: ${postUrl}`, '_blank');
               }}
               className="flex flex-col items-center gap-2 group transition-all"
             >
@@ -621,8 +799,9 @@ const FeedPage: React.FC = () => {
 
             <button 
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                showModal({ title: 'Copiado!', message: 'O link foi copiado para sua área de transferência.', type: 'success' });
+                const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
+                navigator.clipboard.writeText(postUrl);
+                showModal({ title: 'Copiado!', message: 'O link da postagem foi copiado para sua área de transferência.', type: 'success' });
               }}
               className="flex flex-col items-center gap-2 group transition-all"
             >
@@ -634,11 +813,12 @@ const FeedPage: React.FC = () => {
 
             <button 
               onClick={() => {
+                const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
                 if (navigator.share) {
                   navigator.share({
                     title: 'EduConnect',
                     text: 'Confira este conteúdo no EduConnect!',
-                    url: window.location.href,
+                    url: postUrl,
                   }).catch(console.error);
                 } else {
                   showModal({ title: 'Indisponível', message: 'Seu navegador não suporta compartilhamento nativo.', type: 'info' });

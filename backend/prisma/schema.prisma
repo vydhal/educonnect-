@@ -62,6 +62,10 @@ model User {
   projectLikes     ProjectLike[]
   projectFavorites ProjectFavorite[]
   projectComments  ProjectComment[]
+
+  // Friendship Relations
+  sentFriendships     Friendship[] @relation("sentFriendships")
+  receivedFriendships Friendship[] @relation("receivedFriendships")
 }
 
 model Notification {
@@ -88,6 +92,19 @@ model UserFollow {
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("sentFriendships", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("receivedFriendships", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
 }
 
 model Post {
@@ -216,16 +233,30 @@ model SystemSettings {
   updatedAt DateTime @updatedAt
 }
 
+model BadgeType {
+  id          String   @id @default(cuid())
+  name        String   @unique  // Ex: "Inovador", "Mestre"
+  icon        String            // Ex: "🚀", "⭐"
+  description String?
+  color       String   @default("#7C3AED") // Hex color
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  badges      Badge[]
+}
+
 model Badge {
   id          String   @id @default(cuid())
-  type        String   // 'PROATIVO' | 'ESPECIAL' | 'HARMONIOSO'
+  badgeTypeId String
+  badgeType   BadgeType @relation(fields: [badgeTypeId], references: [id], onDelete: Cascade)
   giverId     String
   giver       User     @relation("badgeGiver", fields: [giverId], references: [id], onDelete: Cascade)
   receiverId  String
   receiver    User     @relation("badgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 
-  @@unique([giverId, receiverId, type])
+  @@unique([giverId, receiverId, badgeTypeId])
 }
 
 model ProfileView {

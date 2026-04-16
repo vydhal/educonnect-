@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
-import { authAPI, setAuthToken, usersAPI } from '../api';
+import { authAPI, setAuthToken, usersAPI, settingsAPI } from '../api';
 
 const RegistrationPage: React.FC = () => {
   const { role } = useParams();
@@ -10,6 +10,7 @@ const RegistrationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [schools, setSchools] = useState<any[]>([]);
+  const [branding, setBranding] = useState({ name: 'EduConnect', logo: '' });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,15 +22,20 @@ const RegistrationPage: React.FC = () => {
   });
 
   useEffect(() => {
-    const fetchSchools = async () => {
+    const fetchData = async () => {
       try {
-        const data = await usersAPI.getUsers('ESCOLA');
-        setSchools(data);
+        const [schoolsData, settings] = await Promise.all([
+          usersAPI.getUsers('ESCOLA'),
+          settingsAPI.getPublicSettings()
+        ]);
+        setSchools(schoolsData);
+        if (settings.APP_NAME) setBranding(prev => ({ ...prev, name: settings.APP_NAME }));
+        if (settings.LOGO_URL) setBranding(prev => ({ ...prev, logo: settings.LOGO_URL }));
       } catch (err) {
-        console.error('Failed to fetch schools:', err);
+        console.error('Failed to fetch data:', err);
       }
     };
-    fetchSchools();
+    fetchData();
   }, []);
 
   const title = role === 'aluno' ? 'Crie sua conta de Aluno' : 'Cadastro de Professor';
@@ -76,9 +82,16 @@ const RegistrationPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b px-10 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3 text-primary">
-          <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
-          <h2 className="text-xl font-bold">EduConnect CG</h2>
+        <div 
+          onClick={() => navigate('/')} 
+          className="flex items-center gap-3 text-primary cursor-pointer hover:opacity-80 transition-all"
+        >
+          {branding.logo ? (
+            <img src={branding.logo} alt="Logo" className="h-10 w-auto object-contain" />
+          ) : (
+            <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
+          )}
+          <h2 className="text-xl font-bold">{branding.name}</h2>
         </div>
         <div className="flex gap-8 items-center text-sm font-medium">
           <button className="hover:text-primary">Sobre o Projeto</button>
@@ -269,11 +282,15 @@ const RegistrationPage: React.FC = () => {
           <p className="text-sm text-gray-400">
             Dificuldades? <a href="#" className="text-primary font-bold hover:underline">Fale com o suporte técnico</a>
           </p>
-          <div className="flex justify-center items-center gap-4 opacity-40 grayscale">
-            <img src={IMAGES.PREFEITURA_LOGO} className="h-12" alt="Prefeitura" />
-            <div className="h-8 w-px bg-gray-400"></div>
-            <div className="text-left font-bold uppercase text-[10px] leading-tight">
-              Secretaria de<br />Educação
+          <div className="flex justify-center items-center gap-4 opacity-70 grayscale hover:grayscale-0 transition-all">
+            {branding.logo ? (
+               <img src={branding.logo} className="h-12 w-auto object-contain" alt="Branding" />
+            ) : (
+               <img src={IMAGES.PREFEITURA_LOGO} className="h-12" alt="Prefeitura" />
+            )}
+            <div className="h-8 w-px bg-gray-300"></div>
+            <div className="text-left font-black uppercase text-[10px] leading-tight text-gray-400">
+               {branding.name}<br />Educação
             </div>
           </div>
         </footer>

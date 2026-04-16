@@ -1,21 +1,20 @@
 import { Router, Response } from 'express';
-import { prisma } from '../server.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { prisma } from '../prisma/client.js';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 import { hashPassword } from '../utils/auth.js';
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
 // Get all users (Network suggestions)
-router.get('/', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const role = req.query.role as string;
-    const schoolType = req.query.schoolType as string;
-    const schoolId = req.query.schoolId as string;
+    const { role, schoolType, schoolId, search } = req.query;
     const where: any = {};
 
     if (role && role !== 'TODAS') {
-      where.role = role.toUpperCase();
+      where.role = (role as string).toUpperCase();
     }
 
     if (schoolType) {
@@ -26,9 +25,19 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       where.schoolId = schoolId;
     }
 
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { school: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
     if (req.userId) {
       where.id = { not: req.userId };
     }
+
+    const currentUserId = req.userId;
+    console.log('GET /users: currentUserId identified as:', currentUserId);
 
     const users = await prisma.user.findMany({
       where,
@@ -44,25 +53,42 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         verified: true,
         _count: {
           select: { followers: true }
-        }
+        },
+        ...(currentUserId ? {
+            followers: {
+                where: { followerId: currentUserId },
+                select: { id: true }
+            }
+        } : {})
       },
       take: 50,
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(users);
+    const formattedUsers = users.map((u: any) => {
+        const isFollowing = currentUserId ? (u.followers ? u.followers.length > 0 : false) : false;
+        if (currentUserId) {
+            console.log(`User ${u.name} (${u.id}): followers_found=${u.followers?.length}, isFollowing=${isFollowing}`);
+        }
+        return {
+            ...u,
+            isFollowing
+        };
+    });
+
+    res.json(formattedUsers);
   } catch (error) {
+    console.error('Error in GET /users:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Get Featured Schools (Ranking)
-router.get('/featured-schools', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/featured-schools', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Logic: Fetch schools and calculate engagement
-    // engagement = (posts * 1) + (projects * 3) + (likes_received * 0.5) + (followers * 1)
+    const currentUserId = req.userId;
+    console.log('GET /featured-schools: currentUserId identified as:', currentUserId);
 
-    // For simplicity with Prisma and current model, we'll fetch schools with their counts
     const schools = await prisma.user.findMany({
       where: { role: 'ESCOLA' },
       select: {
@@ -77,21 +103,32 @@ router.get('/featured-schools', async (req: AuthenticatedRequest, res: Response)
             projects: true,
             followers: true
           }
-        }
+        },
+        ...(currentUserId ? {
+            followers: {
+                where: { followerId: currentUserId },
+                select: { id: true }
+            }
+        } : {})
       },
-      take: 20 // Get more and filter/sort in memory or use raw query for complex ranking
+      take: 20
     });
 
-    // We can't easily count "likes received" across all posts in a single simple Prisma query without complex relations
-    // Let's stick to posts, projects and followers for now
-    const rankedSchools = schools.map((school: any) => ({
-      id: school.id,
-      name: school.name,
-      avatar: school.avatar,
-      schoolType: school.schoolType,
-      verified: school.verified,
-      engagement: (school._count.posts * 1) + (school._count.projects * 3) + (school._count.followers * 1)
-    }))
+    const rankedSchools = schools.map((school: any) => {
+      const isFollowing = currentUserId ? (school.followers ? school.followers.length > 0 : false) : false;
+      if (currentUserId) {
+          console.log(`Featured School ${school.name} (${school.id}): followers_found=${school.followers?.length}, isFollowing=${isFollowing}`);
+      }
+      return {
+        id: school.id,
+        name: school.name,
+        avatar: school.avatar,
+        schoolType: school.schoolType,
+        verified: school.verified,
+        isFollowing,
+        engagement: (school._count.posts * 1) + (school._count.projects * 3) + (school._count.followers * 1)
+      };
+    })
       .sort((a: any, b: any) => b.engagement - a.engagement)
       .slice(0, 5);
 
@@ -114,8 +151,6 @@ router.put('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
     if (avatar) updateData.avatar = avatar;
     if (bio) updateData.bio = bio;
     if (school) updateData.school = school;
-    // Theme is likely client-side only, but if we add it to schema later we can save it.
-    // For now, we'll focus on the fields that exist in schema.
 
     if (password) {
       updateData.password = await hashPassword(password);
@@ -167,7 +202,10 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     }
 
     let isFollowing = false;
+    let friendship = null;
+
     if (req.userId) {
+      // Check follow (for units)
       const follow = await prisma.userFollow.findUnique({
         where: {
           followerId_followingId: {
@@ -177,9 +215,29 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
         }
       });
       isFollowing = !!follow;
+
+      // Check friendship (for users)
+      friendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { senderId: req.userId, receiverId: req.params.id },
+            { senderId: req.params.id, receiverId: req.userId }
+          ]
+        }
+      });
     }
 
-    res.json({ ...user, isFollowing });
+    const friendsCount = await prisma.friendship.count({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { senderId: req.params.id },
+          { receiverId: req.params.id }
+        ]
+      }
+    });
+
+    res.json({ ...user, isFollowing, friendship, friendsCount });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });
@@ -189,7 +247,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-// Follow user
+// Follow user (only for roles ESCOLA)
 router.post('/:id/follow', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!req.userId) {
@@ -208,6 +266,10 @@ router.post('/:id/follow', authMiddleware, async (req: AuthenticatedRequest, res
       throw new AppError('User not found', 404);
     }
 
+    if (user.role !== 'ESCOLA') {
+      throw new AppError('Somente Unidades e Escolas podem ser seguidas. Para outros usuários, envie solicitação de amizade.', 400);
+    }
+
     const existingFollow = await prisma.userFollow.findUnique({
       where: {
         followerId_followingId: {
@@ -221,7 +283,9 @@ router.post('/:id/follow', authMiddleware, async (req: AuthenticatedRequest, res
       await prisma.userFollow.delete({
         where: { id: existingFollow.id }
       });
-      return res.json({ following: false });
+      // Return real count after unfollow
+      const followersCount = await prisma.userFollow.count({ where: { followingId: req.params.id } });
+      return res.json({ following: false, followersCount });
     }
 
     await prisma.userFollow.create({
@@ -237,12 +301,14 @@ router.post('/:id/follow', authMiddleware, async (req: AuthenticatedRequest, res
         type: 'FOLLOW',
         recipientId: req.params.id,
         senderId: req.userId,
-        relatedId: req.userId, // Próprio seguidor como ID relacionado
+        relatedId: req.userId,
         content: 'começou a te seguir'
       }
     }).catch(err => console.error('Failed to create follow notification', err));
 
-    res.json({ following: true });
+    // Return real count after follow
+    const followersCount = await prisma.userFollow.count({ where: { followingId: req.params.id } });
+    res.json({ following: true, followersCount });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });

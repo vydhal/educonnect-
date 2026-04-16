@@ -4,16 +4,14 @@ import { hashPassword } from '../utils/auth.js';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  // Check if data already exists
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    console.log('⚠️ Database already contains data. Skipping seed to prevent data loss.');
+    return;
+  }
 
-  // Clear existing data
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.userFollow.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.moderationItem.deleteMany();
-  await prisma.user.deleteMany();
+  console.log('🌱 Seeding database...');
 
   // Create users
   const admin = await prisma.user.create({
@@ -233,8 +231,50 @@ async function main() {
   });
 
   console.log('✅ Projects created');
+  
+  // Create Badge Types (Zeta Feature)
+  const btInovador = await prisma.badgeType.create({
+    data: {
+      name: 'Inovador',
+      icon: '✨',
+      description: 'Destaque em criatividade e novas ideias.',
+      color: '#7C3AED'
+    }
+  });
 
-  console.log('✨ Database seeded successfully!');
+  const btColaborativo = await prisma.badgeType.create({
+    data: {
+      name: 'Colaborativo',
+      icon: '🤝',
+      description: 'Excelente trabalho em equipe e apoio aos colegas.',
+      color: '#10B981'
+    }
+  });
+
+  const btInspirador = await prisma.badgeType.create({
+    data: {
+      name: 'Inspirador',
+      icon: '🔥',
+      description: 'Motiva e inspira a comunidade com suas ações.',
+      color: '#F59E0B'
+    }
+  });
+
+  console.log('✅ Badge Types created');
+
+  // Create initial badges
+  await prisma.badge.createMany({
+    data: [
+      { giverId: admin.id, receiverId: professor.id, badgeTypeId: btInovador.id },
+      { giverId: admin.id, receiverId: escola.id, badgeTypeId: btInspirador.id },
+      { giverId: professor.id, receiverId: aluno.id, badgeTypeId: btColaborativo.id },
+      { giverId: professor2.id, receiverId: aluno2.id, badgeTypeId: btInovador.id }
+    ]
+  });
+
+  console.log('✅ Initial Badges assigned');
+
+  console.log('✨ Database seeded successfully with Zeta features!');
 }
 
 main()

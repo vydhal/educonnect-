@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma/client.js';
 import authRoutes from './routes/auth.routes.js';
 import postRoutes from './routes/post.routes.js';
 import moderationRoutes from './routes/moderation.routes.js';
@@ -13,6 +13,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import socialRoutes from './routes/social.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import supportRoutes from './routes/support.routes.js';
+import badgeTypesRoutes from './routes/badgetypes.routes.js';
 import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler.js';
@@ -23,8 +24,7 @@ const app: Express = express();
 app.enable('trust proxy');
 const port = parseInt(process.env.PORT || '5000', 10);
 
-// Initialize Prisma
-export const prisma = new PrismaClient();
+// Prisma is initialized in ./prisma/client.js
 
 // Middleware
 app.use(cors({
@@ -38,6 +38,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Routes
+app.use('/api/badge-types', badgeTypesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/moderation', moderationRoutes);

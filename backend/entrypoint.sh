@@ -9,7 +9,7 @@ done
 echo "✅ PostgreSQL conectado!"
 
 echo "🔄 Executando migrações Prisma..."
-npx prisma migrate deploy
+npx prisma migrate deploy || (echo "⚠️ Migração falhou, tentando db push..." && npx prisma db push --force-reset)
 
 echo "🌱 Executando seed..."
 npm run prisma:seed

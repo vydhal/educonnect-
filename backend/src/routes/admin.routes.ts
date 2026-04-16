@@ -1,6 +1,6 @@
 
 import { Router, Response, Request } from 'express';
-import { prisma } from '../server.js';
+import { prisma } from '../prisma/client.js';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 import { hashPassword } from '../utils/auth.js';
@@ -27,12 +27,48 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req: AuthenticatedR
         ]);
 
         const totalInteractions = likesCount + commentsCount;
+        const totalBadges = await prisma.badge.count();
+
+        // Get top 5 users with most badges received
+        const topUsersWithBadges = await prisma.badge.groupBy({
+            by: ['receiverId'],
+            _count: {
+                id: true
+            },
+            orderBy: {
+                _count: {
+                    id: 'desc'
+                }
+            },
+            take: 5
+        });
+
+        // Get details for these users
+        const topRankedUsers = await Promise.all(
+            topUsersWithBadges.map(async (item) => {
+                const user = await prisma.user.findUnique({
+                    where: { id: item.receiverId },
+                    select: { name: true, avatar: true, school: true, worksAt: { select: { name: true } } }
+                });
+                return {
+                    id: item.receiverId,
+                    name: user?.name || 'Desconhecido',
+                    avatar: user?.avatar,
+                    school: user?.worksAt?.name || user?.school || 'Sem unidade',
+                    badgesCount: item._count.id
+                };
+            })
+        );
 
         res.json({
             users: { total: usersCount, trend: '+12%' },
             posts: { total: postsCount, trend: '+5.4%' },
             interactions: { total: totalInteractions, trend: '+8%' },
-            moderation: { pending: pendingModerationCount, trend: pendingModerationCount > 0 ? '+1' : '0' }
+            moderation: { pending: pendingModerationCount, trend: pendingModerationCount > 0 ? '+1' : '0' },
+            badges: {
+                total: totalBadges,
+                topUsers: topRankedUsers
+            }
         });
     } catch (error) {
         console.error('Error fetching admin stats:', error);

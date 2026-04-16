@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { prisma } from '../server.js';
+import { prisma } from '../prisma/client.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 
@@ -44,6 +44,28 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
         }
       }
     });
+
+    // Create MENTION notifications for @[Name](id) patterns
+    if (content) {
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+      let match;
+      const mentionedIds = new Set<string>();
+      while ((match = mentionRegex.exec(content)) !== null) {
+        const mentionedId = match[2];
+        if (mentionedId !== req.userId && !mentionedIds.has(mentionedId)) {
+          mentionedIds.add(mentionedId);
+          prisma.notification.create({
+            data: {
+              type: 'MENTION',
+              recipientId: mentionedId,
+              senderId: req.userId,
+              relatedId: post.id,
+              content: 'te mencionou em uma publicação'
+            }
+          }).catch((err: any) => console.error('Failed to create mention notification', err));
+        }
+      }
+    }
 
     res.status(201).json(post);
   } catch (error) {
@@ -117,7 +139,22 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
 // Get all posts (feed)
 router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const { tag, search } = req.query;
+    const where: any = {};
+
+    if (tag) {
+      where.tags = { has: tag as string };
+    }
+
+    if (search) {
+      where.OR = [
+        { content: { contains: search as string, mode: 'insensitive' } },
+        { author: { name: { contains: search as string, mode: 'insensitive' } } }
+      ];
+    }
+
     const posts = await prisma.post.findMany({
+      where,
       include: {
         author: {
           select: { id: true, name: true, avatar: true, role: true, verified: true, school: true }
@@ -144,6 +181,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
 
     res.json(formattedPosts);
   } catch (error) {
+    console.error('Error fetching posts:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -327,6 +365,80 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Res
     });
 
     res.json({ message: 'Post deleted' });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+// Update comment
+router.put('/:postId/comments/:commentId', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { content } = req.body;
+    const { commentId } = req.params;
+
+    if (!content) {
+      throw new AppError('Content is required', 400);
+    }
+
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId }
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    if (comment.authorId !== req.userId) {
+      throw new AppError('Unauthorized', 403);
+    }
+
+    const updated = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true }
+        }
+      }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+// Delete comment
+router.delete('/:postId/comments/:commentId', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { commentId } = req.params;
+
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId }
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Author of comment or admin can delete
+    if (comment.authorId !== req.userId && req.userRole !== 'ADMIN') {
+      throw new AppError('Unauthorized', 403);
+    }
+
+    await prisma.comment.delete({
+      where: { id: commentId }
+    });
+
+    res.json({ message: 'Comment deleted' });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });

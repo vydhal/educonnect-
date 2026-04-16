@@ -1,6 +1,6 @@
 
 import { Router, Response, Request } from 'express';
-import { prisma } from '../server.js';
+import { prisma } from '../prisma/client.js';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest } from '../middleware/errorHandler.js';
 

@@ -162,13 +162,13 @@ const AdminSchoolsPage: React.FC = () => {
         <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold font-display">Gestão de Escolas</h1>
+                    <h1 className="text-3xl font-bold font-display dark:text-white">Gestão de Escolas</h1>
                     <p className="text-gray-500">Gerencie as unidades educacionais da rede.</p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => adminAPI.downloadSchoolTemplate()}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium border border-gray-200"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all font-medium border border-gray-200 dark:border-gray-700"
                     >
                         <span className="material-symbols-outlined">download</span> Baixar Modelo
                     </button>
@@ -178,20 +178,20 @@ const AdminSchoolsPage: React.FC = () => {
                     >
                         <span className="material-symbols-outlined">add_business</span> Nova Escola
                     </button>
-                    <label className="flex items-center gap-2 px-4 py-2 bg-white border text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer font-medium">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer font-medium">
                         <span className="material-symbols-outlined">upload</span> Importar CSV
                         <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
                     </label>
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100 flex gap-4">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm mb-8 border border-gray-100 dark:border-gray-800 flex gap-4">
                 <div className="relative flex-1">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
                     <input
                         type="text"
                         placeholder="Buscar por nome, email ou INEP..."
-                        className="w-full bg-gray-50 border-none p-4 pl-12 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="w-full bg-gray-50 dark:bg-gray-800 border-none p-4 pl-12 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all dark:text-white"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -199,7 +199,7 @@ const AdminSchoolsPage: React.FC = () => {
                 <select
                     value={zoneFilter}
                     onChange={(e) => setZoneFilter(e.target.value)}
-                    className="bg-gray-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all min-w-[200px]"
+                    className="bg-gray-50 dark:bg-gray-800 border-none p-4 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all min-w-[200px] dark:text-white"
                 >
                     <option value="">Todas as Zonas</option>
                     <option value="URBANA">Urbana</option>
@@ -207,9 +207,9 @@ const AdminSchoolsPage: React.FC = () => {
                 </select>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800">
                 <table className="w-full text-left">
-                    <thead className="bg-gray-50/50 border-b">
+                    <thead className="bg-gray-50/50 dark:bg-gray-800/50 border-b dark:border-gray-800">
                         <tr>
                             <th className="p-5 font-bold text-xs uppercase tracking-wider text-gray-500">Escola</th>
                             <th className="p-5 font-bold text-xs uppercase tracking-wider text-gray-500">INEP</th>
@@ -218,16 +218,16 @@ const AdminSchoolsPage: React.FC = () => {
                             <th className="p-5 font-bold text-xs uppercase tracking-wider text-gray-500 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                         {schools.length > 0 ? schools.map(school => (
-                            <tr key={school.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={school.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                 <td className="p-5">
                                     <div className="flex items-center gap-4">
-                                        <div className="size-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100">
+                                        <div className="size-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold border border-blue-100 dark:border-blue-800">
                                             {school.name.substring(0, 2).toUpperCase()}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">{school.name}</p>
+                                            <p className="font-bold text-gray-900 dark:text-gray-100">{school.name}</p>
                                             <p className="text-xs text-gray-500">{school.email}</p>
                                         </div>
                                     </div>
@@ -297,9 +297,9 @@ const AdminSchoolsPage: React.FC = () => {
             {/* Create Modal */}
             {isCreating && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-                    <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold font-display">Nova Escola</h2>
+                            <h2 className="text-2xl font-bold font-display dark:text-white">Nova Escola</h2>
                             <button onClick={() => setIsCreating(false)} className="text-gray-400 hover:text-gray-600">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
@@ -425,11 +425,11 @@ const AdminSchoolsPage: React.FC = () => {
                     <div className="bg-white rounded-3xl p-10 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
                         <div className="flex justify-between items-center mb-8">
                             <div className="flex items-center gap-3">
-                                <div className="size-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                                <div className="size-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                     <span className="material-symbols-outlined text-2xl">edit_square</span>
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-bold font-display">Editar Escola</h2>
+                                    <h2 className="text-2xl font-bold font-display dark:text-white">Editar Escola</h2>
                                     <p className="text-gray-500 text-sm">Atualize as informações da unidade educacional.</p>
                                 </div>
                             </div>

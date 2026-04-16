@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { prisma } from '../server.js';
+import { prisma } from '../prisma/client.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 

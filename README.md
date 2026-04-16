@@ -34,9 +34,9 @@ docker-compose up --build
 
 | Camada | Status | Versão |
 | :--- | :--- | :--- |
-| **Backend** | ✅ Operacional | 1.0.6 |
-| **Frontend** | ✅ Operacional | 1.0.6 |
-| **Documentação** | ✅ Atualizada | 1.0.7 |
+| **Backend** | ✅ Operacional | 1.1.0 |
+| **Frontend** | ✅ Operacional | 1.1.0 |
+| **Documentação** | ✅ Atualizada | 1.1.0 |
 
 ---
 **Desenvolvido com ❤️ para transformar a educação.**

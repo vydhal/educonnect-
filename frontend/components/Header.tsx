@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../api';
+import { authAPI, notificationsAPI, socialAPI } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
+import { IMAGES } from '../constants';
 import { BottomNavigation } from './BottomNavigation';
 import { RichPostInput } from './RichPostInput';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
     activeTab: 'home' | 'network' | 'projects' | 'profile';
@@ -38,7 +40,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(propUser || null);
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [searchLocal, setSearchLocal] = useState('');
     const { settings } = useSettings();
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchLocal.trim()) {
+            navigate(`/feed?search=${encodeURIComponent(searchLocal.trim())}`);
+        } else {
+            navigate('/feed');
+        }
+    };
 
     useEffect(() => {
         // If propUser is provided (or becomes provided), sync it
@@ -72,6 +85,20 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                                 <span className="text-[8px] align-top text-primary ml-1">(DEV)</span>
                             </h2>
                         </div>
+
+                        {/* Search Bar - Desktop */}
+                        <div className="hidden lg:flex items-center flex-1 max-w-md mx-4">
+                            <form onSubmit={handleSearchSubmit} className="relative w-full">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl font-light">search</span>
+                                <input
+                                    type="text"
+                                    value={searchLocal}
+                                    onChange={(e) => setSearchLocal(e.target.value)}
+                                    placeholder="Pesquisar por #hashtags ou pessoas..."
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-2xl py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 ring-primary/20 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 shadow-inner"
+                                />
+                            </form>
+                        </div>
                     </div>
                     
                     {/* Desktop Navigation */}
@@ -95,6 +122,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                         
                         {/* Desktop Actions */}
                         <div className="hidden md:flex items-center gap-3">
+                            <NotificationBell notificationsAPI={notificationsAPI} socialAPI={socialAPI} />
                             <button onClick={onLogout} title="Sair" className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                                 <span className="material-symbols-outlined">logout</span>
                             </button>
@@ -111,10 +139,38 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                             onClick={() => user?.id && navigate(`/profile/${user.id}`)}
                             title="Ver meu perfil público"
                             className="size-9 rounded-full bg-cover bg-center border border-gray-200 cursor-pointer hover:ring-2 ring-primary transition-all shrink-0"
-                            style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }}
+                            style={{ backgroundImage: `url(${user?.avatar || IMAGES.DEFAULT_AVATAR})` }}
                         />
+
+                        {/* Mobile Search Toggle + Notifications */}
+                        <div className="lg:hidden flex items-center gap-1">
+                            <NotificationBell notificationsAPI={notificationsAPI} socialAPI={socialAPI} />
+                            <button 
+                                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                            >
+                                <span className="material-symbols-outlined">{isMobileSearchOpen ? 'close' : 'search'}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Mobile Search Bar - Collapsible */}
+                {isMobileSearchOpen && (
+                    <div className="lg:hidden mt-3 pt-3 border-t dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
+                        <form onSubmit={handleSearchSubmit} className="relative w-full">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl font-light">search</span>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={searchLocal}
+                                onChange={(e) => setSearchLocal(e.target.value)}
+                                placeholder="Pesquisar hashtags ou pessoas..."
+                                className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-2xl py-3 pl-10 pr-4 text-sm font-medium focus:ring-2 ring-primary/20 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 shadow-inner"
+                            />
+                        </form>
+                    </div>
+                )}
             </header>
 
             {/* Mobile Bottom Navigation */}

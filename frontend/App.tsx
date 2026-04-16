@@ -20,6 +20,8 @@ import AdminEventsPage from './pages/AdminEventsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import AdminModerationPage from './pages/AdminModerationPage';
 import AdminSupportPage from './pages/AdminSupportPage';
+import { AdminBadgesPage } from './pages/AdminBadgesPage';
+import PostPage from './pages/PostPage';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ModalProvider } from './contexts/ModalContext';
 
@@ -41,6 +43,7 @@ const App: React.FC = () => {
             <Route path="/profile/:id" element={<PublicProfilePage />} />
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/post/:id" element={<PostPage />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="stats" element={<AdminDashboard />} />
@@ -51,6 +54,7 @@ const App: React.FC = () => {
               <Route path="reports" element={<AdminReportsPage />} />
               <Route path="moderation" element={<AdminModerationPage />} />
               <Route path="support" element={<AdminSupportPage />} />
+              <Route path="badges" element={<AdminBadgesPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

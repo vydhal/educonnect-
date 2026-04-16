@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usersAPI, postsAPI } from '../api';
 import { MultiImageUpload } from './MultiImageUpload';
+import { IMAGES } from '../constants';
 
 interface RichPostInputProps {
     onPostCreated: (post: any) => void;
@@ -100,16 +101,20 @@ export const RichPostInput: React.FC<RichPostInputProps> = ({
         }
     }, [mentionQuery]);
 
-    const selectUser = (user: any) => {
+    const handleSuggestionClick = (user: any) => {
         if (cursorPosition === null || !textareaRef.current) return;
 
-        const beforeMention = content.slice(0, cursorPosition);
-        const afterCursor = content.slice(textareaRef.current.selectionStart);
+        const textBeforeMention = content.substring(0, cursorPosition);
+        const textAfterMention = content.substring(textareaRef.current.selectionStart);
 
-        const newContent = `${beforeMention}@${user.name} ${afterCursor}`;
+        // Structured mention: @[Name](id)
+        const mentionText = `@[${user.name}](${user.id})`;
+        const newContent = textBeforeMention + mentionText + ' ' + textAfterMention;
+
         setContent(newContent);
         setMentionQuery(null);
         setSuggestions([]);
+        textareaRef.current.focus();
     };
 
     const imageUploadRef = useRef<{ triggerUpload: () => void } | null>(null);
@@ -144,12 +149,12 @@ export const RichPostInput: React.FC<RichPostInputProps> = ({
                                 {suggestions.map(user => (
                                     <button
                                         key={user.id}
-                                        onClick={() => selectUser(user)}
+                                        onClick={() => handleSuggestionClick(user)}
                                         className="w-full text-left px-4 py-4 hover:bg-primary/5 dark:hover:bg-primary/20 flex items-center gap-4 transition-all rounded-2xl group active:scale-[0.98]"
                                     >
                                         <div
                                             className="size-11 rounded-full bg-cover bg-center shrink-0 border-2 border-white dark:border-gray-800 shadow-sm"
-                                            style={{ backgroundImage: `url(${user.avatar || `https://ui-avatars.com/api/?name=${user.name}`})` }}
+                                            style={{ backgroundImage: `url(${user.avatar || IMAGES.DEFAULT_AVATAR})` }}
                                         />
                                         <div className="min-w-0">
                                             <p className="text-sm font-black truncate text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">{user.name}</p>

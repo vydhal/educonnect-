@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
-import { usersAPI, socialAPI, authAPI, projectsAPI } from '../api';
+import { usersAPI, socialAPI, authAPI, projectsAPI, badgeTypesAPI } from '../api';
 import { useModal } from '../contexts/ModalContext';
+import { IMAGES } from '../constants';
 
 const PublicProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -15,11 +15,14 @@ const PublicProfilePage: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     // Social data
-    const [badges, setBadges] = useState<any>({ PROATIVO: 0, ESPECIAL: 0, HARMONIOSO: 0 });
+    const [badges, setBadges] = useState<any[]>([]);
+    const [badgeTypes, setBadgeTypes] = useState<any[]>([]);
     const [testimonials, setTestimonials] = useState<any[]>([]);
     const [visitors, setVisitors] = useState<any[]>([]);
     const [followersCount, setFollowersCount] = useState(0);
     const [isFollowing, setIsFollowing] = useState(false);
+    const [friendship, setFriendship] = useState<any>(null);
+    const [friendsCount, setFriendsCount] = useState(0);
     const [pendingTestimonials, setPendingTestimonials] = useState<any[]>([]);
 
     // UI states
@@ -40,6 +43,8 @@ const PublicProfilePage: React.FC = () => {
                 setProfileUser(profile);
                 setFollowersCount(profile._count?.followers || 0);
                 setIsFollowing(profile.isFollowing || false);
+                setFriendship(profile.friendship || null);
+                setFriendsCount(profile.friendsCount || 0);
 
                 // Fetch current user
                 const me = await authAPI.getProfile().catch(() => null);
@@ -48,6 +53,10 @@ const PublicProfilePage: React.FC = () => {
                 // Fetch badges
                 const badgeData = await socialAPI.getBadges(id);
                 setBadges(badgeData);
+
+                // Fetch available badge types
+                const types = await badgeTypesAPI.getBadgeTypes();
+                setBadgeTypes(types);
 
                 // Fetch testimonials
                 const testiData = await socialAPI.getTestimonials(id);
@@ -84,29 +93,103 @@ const PublicProfilePage: React.FC = () => {
         try {
             const response = await usersAPI.followUser(id);
             setIsFollowing(response.following);
-            setFollowersCount(prev => response.following ? prev + 1 : prev - 1);
+            // Use real count from server to avoid inconsistencies
+            if (typeof response.followersCount === 'number') {
+                setFollowersCount(response.followersCount);
+                setProfileUser((prev: any) => prev ? {
+                    ...prev,
+                    _count: { ...prev._count, followers: response.followersCount }
+                } : null);
+            } else {
+                // Fallback to optimistic update
+                setFollowersCount(prev => response.following ? prev + 1 : prev - 1);
+            }
+        } catch (error: any) {
+            console.error(error);
+            showModal({ title: 'Ação Bloqueada', message: error.message || 'Erro ao seguir.', type: 'error' });
+        }
+    };
 
-            // Proactive update of profileUser count if needed
-            setProfileUser((prev: any) => prev ? {
-                ...prev,
-                _count: { ...prev._count, followers: response.following ? (prev._count.followers + 1) : (prev._count.followers - 1) }
-            } : null);
+    const handleFriendRequest = async () => {
+        if (!id || !currentUser) return;
+        try {
+            const response = await socialAPI.sendFriendRequest(id);
+            setFriendship(response);
+            showModal({ title: 'Solicitação Enviada', message: 'Sua solicitação de amizade foi enviada com sucesso!', type: 'success' });
+        } catch (error: any) {
+            console.error(error);
+            showModal({ title: 'Erro', message: error.message || 'Não foi possível enviar a solicitação.', type: 'error' });
+        }
+    };
+
+    const handleAcceptFriend = async () => {
+        if (!friendship || !currentUser) return;
+        try {
+            await socialAPI.updateFriendRequest(friendship.id, 'ACCEPTED');
+            setFriendship({ ...friendship, status: 'ACCEPTED' });
+            setFriendsCount(prev => prev + 1);
+            showModal({ title: 'Sucesso', message: 'Agora vocês são amigos!', type: 'success' });
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleGiveBadge = async (type: 'PROATIVO' | 'ESPECIAL' | 'HARMONIOSO') => {
+    const handleRemoveFriend = async () => {
         if (!id || !currentUser) return;
+        showModal({
+            title: 'Remover Amigo',
+            message: 'Tem certeza que deseja desfazer esta amizade?',
+            type: 'warning',
+            confirmLabel: 'Remover',
+            onConfirm: async () => {
+                try {
+                    await socialAPI.removeFriend(id);
+                    setFriendship(null);
+                    setFriendsCount(prev => prev - 1);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        });
+    };
+
+    const handleGiveBadge = async (badgeType: any) => {
+        if (!id || !currentUser) return;
+        
+        const existing = badges.find(b => b.typeId === badgeType.id && b.isGivenByMe);
+
+        if (existing) {
+            // Confirmation dialog for removal
+            showModal({
+                title: 'Retirar Selo?',
+                message: `Você deseja remover o selo ${badgeType.icon} ${badgeType.name} deste perfil?`,
+                type: 'warning',
+                confirmLabel: 'Sim, Retirar',
+                onConfirm: async () => {
+                    try {
+                        await socialAPI.removeBadge(id, badgeType.id);
+                        const badgeData = await socialAPI.getBadges(id);
+                        setBadges(badgeData);
+                        showModal({ title: 'Removido', message: 'Reconhecimento retirado com sucesso.', type: 'success' });
+                    } catch (error) {
+                        console.error(error);
+                        showModal({ title: 'Erro', message: 'Não foi possível retirar o selo.', type: 'error' });
+                    }
+                }
+            });
+            return;
+        }
+
         try {
-            await socialAPI.giveBadge(id, type);
+            await socialAPI.giveBadge(id, badgeType.id);
+            showModal({ title: 'Reconhecimento Enviado!', message: `Você concedeu o selo ${badgeType.icon} ${badgeType.name} para este perfil. Inspirador!`, type: 'success' });
+            
             // Refresh counts
             const badgeData = await socialAPI.getBadges(id);
             setBadges(badgeData);
-            showModal({ title: 'Reconhecimento Enviado!', message: `Você concedeu o selo de ${type} para este perfil. Inspirador!`, type: 'success' });
         } catch (error) {
             console.error(error);
-            showModal({ title: 'Ops!', message: 'Não foi possível conceder este selo. Talvez você já tenha avaliado este perfil recentemente.', type: 'error' });
+            showModal({ title: 'Ops!', message: 'Não foi possível conceder este selo.', type: 'error' });
         }
     };
 
@@ -160,7 +243,7 @@ const PublicProfilePage: React.FC = () => {
 
                         <div className="relative z-10">
                             <div className="size-32 rounded-3xl border-4 border-white dark:border-gray-800 shadow-xl mx-auto bg-cover bg-center mb-6"
-                                style={{ backgroundImage: `url(${profileUser?.avatar || `https://ui-avatars.com/api/?name=${profileUser?.name}&background=random`})` }} />
+                                 style={{ backgroundImage: `url(${profileUser?.avatar || IMAGES.DEFAULT_AVATAR})` }} />
 
                             <h1 className="text-2xl font-black dark:text-white mb-2">{profileUser?.name}</h1>
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider mb-4 inline-block">
@@ -169,11 +252,18 @@ const PublicProfilePage: React.FC = () => {
 
                             <p className="text-sm text-gray-500 mb-6">{profileUser?.bio || 'Sem biografia definida.'}</p>
 
-                            <div className="flex justify-center gap-6 py-4 border-y dark:border-gray-800 mb-6">
-                                <div className="text-center">
-                                    <p className="text-xl font-black text-primary">{followersCount}</p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Seguidores</p>
-                                </div>
+                            <div className="flex justify-center gap-6 py-4 border-y dark:border-gray-800 mb-6 font-bold">
+                                {profileUser?.role === 'ESCOLA' ? (
+                                    <div className="text-center">
+                                        <p className="text-xl font-black text-primary">{followersCount}</p>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Favoritos</p>
+                                    </div>
+                                ) : (
+                                    <div className="text-center">
+                                        <p className="text-xl font-black text-primary">{friendsCount}</p>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Amigos</p>
+                                    </div>
+                                )}
                                 <div className="text-center">
                                     <p className="text-xl font-black text-primary">{profileUser?._count?.projects || 0}</p>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase">Projetos</p>
@@ -182,20 +272,76 @@ const PublicProfilePage: React.FC = () => {
 
                             {!isOwner && currentUser && (
                                 <div className="space-y-4">
-                                    <button
-                                        onClick={handleFollow}
-                                        className={`w-full py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${isFollowing ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-primary text-white shadow-primary/20 hover:brightness-110'}`}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">{isFollowing ? 'person_remove' : 'person_add'}</span>
-                                        {isFollowing ? 'Deixar de Seguir' : 'Seguir Perfil'}
-                                    </button>
+                                    {profileUser?.role === 'ESCOLA' ? (
+                                        <button
+                                            onClick={handleFollow}
+                                            className={`w-full py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${isFollowing ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-primary text-white shadow-primary/20 hover:brightness-110'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-sm font-fill-1">{isFollowing ? 'favorite' : 'favorite'}</span>
+                                            {isFollowing ? 'Remover dos Favoritos' : 'Favoritar Unidade'}
+                                        </button>
+                                    ) : (
+                                        <>
+                                            {!friendship ? (
+                                                <button
+                                                    onClick={handleFriendRequest}
+                                                    className="w-full py-3 rounded-2xl font-black text-sm bg-primary text-white shadow-lg shadow-primary/20 hover:brightness-110 flex items-center justify-center gap-2"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">person_add</span>
+                                                    Fazer Amigo
+                                                </button>
+                                            ) : friendship.status === 'PENDING' ? (
+                                                friendship.senderId === currentUser.id ? (
+                                                    <button className="w-full py-3 rounded-2xl font-black text-sm bg-gray-100 text-gray-400 flex items-center justify-center gap-2 cursor-default">
+                                                        <span className="material-symbols-outlined text-sm">hourglass_empty</span>
+                                                        Solicitação Pendente
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <button onClick={handleAcceptFriend} className="flex-1 py-3 rounded-2xl font-black text-sm bg-green-500 text-white shadow-lg shadow-green-500/20 hover:brightness-110 flex items-center justify-center gap-2">
+                                                            Aceitar
+                                                        </button>
+                                                        <button 
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await socialAPI.updateFriendRequest(friendship.id, 'REJECTED');
+                                                                    setFriendship(null);
+                                                                } catch (err) { console.error(err); }
+                                                            }} 
+                                                            className="flex-1 py-3 rounded-2xl font-black text-sm bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center"
+                                                        >
+                                                            Recusar
+                                                        </button>
+                                                    </div>
+                                                )
+                                            ) : (
+                                                <button
+                                                    onClick={handleRemoveFriend}
+                                                    className="w-full py-3 rounded-2xl font-black text-sm bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-red-500 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">group</span>
+                                                    Amigos
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
 
                                     <div className="pt-4">
-                                        <p className="text-xs font-bold text-gray-400 uppercase text-left mb-4">Dar Selo de Reconhecimento</p>
-                                        <div className="flex justify-around gap-2">
-                                            <BadgeIcon icon="verified_user" label="Proativo" count={badges.PROATIVO} onClick={() => handleGiveBadge('PROATIVO')} />
-                                            <BadgeIcon icon="star" label="Especial" count={badges.ESPECIAL} onClick={() => handleGiveBadge('ESPECIAL')} />
-                                            <BadgeIcon icon="favorite" label="Harmonia" count={badges.HARMONIOSO} onClick={() => handleGiveBadge('HARMONIOSO')} />
+                                        <p className="text-xs font-bold text-gray-400 uppercase text-left mb-4">Reconhecer este Perfil</p>
+                                        <div className="flex flex-wrap justify-center gap-3">
+                                            {badgeTypes.map(type => {
+                                                const isGiven = badges.find(b => b.typeId === type.id && b.isGivenByMe);
+                                                return (
+                                                    <BadgeIcon 
+                                                        key={type.id}
+                                                        icon={type.icon} 
+                                                        label={type.name} 
+                                                        color={type.color}
+                                                        isActive={!!isGiven}
+                                                        onClick={() => handleGiveBadge(type)} 
+                                                    />
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -235,10 +381,21 @@ const PublicProfilePage: React.FC = () => {
                 {/* Main Content Area */}
                 <div className="flex-1 space-y-6">
                     {/* Display Badge Counts Always */}
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex justify-around">
-                        <BadgeDisplay icon="verified_user" label="Proativo" count={badges.PROATIVO} color="text-blue-500" />
-                        <BadgeDisplay icon="star" label="Professor Especial" count={badges.ESPECIAL} color="text-yellow-500" />
-                        <BadgeDisplay icon="favorite" label="Ugar Harmonioso" count={badges.HARMONIOSO} color="text-pink-500" />
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-wrap justify-around gap-4">
+                        {badges.length === 0 ? (
+                            <p className="text-xs text-gray-400 italic">Nenhum selo recebido ainda.</p>
+                        ) : (
+                            badges.map(b => (
+                                <BadgeDisplay 
+                                    key={b.typeId}
+                                    icon={b.icon} 
+                                    label={b.name} 
+                                    count={b.count} 
+                                    color={b.color} 
+                                    isGivenByMe={b.isGivenByMe}
+                                />
+                            ))
+                        )}
                     </div>
 
                     {/* Tabs */}
@@ -376,26 +533,32 @@ const PublicProfilePage: React.FC = () => {
     );
 };
 
-const BadgeIcon: React.FC<{ icon: string, label: string, count: number, onClick: () => void }> = ({ icon, label, count, onClick }) => (
+const BadgeIcon: React.FC<{ icon: string, label: string, color: string, isActive?: boolean, onClick: () => void }> = ({ icon, label, color, isActive, onClick }) => (
     <button
         onClick={onClick}
-        title={`Dar selo de ${label}`}
-        className="flex flex-col items-center gap-2 group"
+        title={isActive ? `Selo já concedido (Clique para retirar)` : `Dar selo de ${label}`}
+        className="flex flex-col items-center gap-1.5 group scale-90 hover:scale-100 transition-all"
     >
-        <div className="size-12 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
-            <span className="material-symbols-outlined text-2xl">{icon}</span>
+        <div 
+           className={`size-11 rounded-2xl flex items-center justify-center transition-all shadow-sm border ${isActive ? 'grayscale dark:grayscale-[0.5] opacity-50 bg-gray-100 dark:bg-gray-800' : 'grayscale-0 bg-white dark:bg-gray-900 border-primary/20 shadow-primary/5'}`}
+           style={{ color: isActive ? '#94a3b8' : color }}
+        >
+            <span className={icon.length > 2 ? "material-symbols-outlined text-xl" : "text-xl"}>{icon}</span>
         </div>
-        <span className="text-[10px] font-bold text-gray-500 uppercase">{label}</span>
+        <span className={`text-[9px] font-black uppercase tracking-tighter truncate w-14 text-center ${isActive ? 'text-gray-400' : 'text-primary'}`}>{label}</span>
     </button>
 );
 
-const BadgeDisplay: React.FC<{ icon: string, label: string, count: number, color: string }> = ({ icon, label, count, color }) => (
-    <div className="flex flex-col items-center gap-2">
-        <div className={`size-16 rounded-3xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center ${color} shadow-sm border border-transparent hover:border-primary/20 transition-all`}>
-            <span className="material-symbols-outlined text-3xl">{icon}</span>
+const BadgeDisplay: React.FC<{ icon: string, label: string, count: number, color: string, isGivenByMe?: boolean }> = ({ icon, label, count, color, isGivenByMe }) => (
+    <div className={`flex flex-col items-center gap-2 group transition-all ${isGivenByMe ? 'scale-105' : ''}`}>
+        <div 
+           className={`size-16 rounded-3xl flex items-center justify-center shadow-sm border transition-all ${isGivenByMe ? 'border-primary shadow-lg shadow-primary/10' : 'bg-gray-50 dark:bg-gray-800 border-transparent hover:border-primary/20'}`}
+           style={{ color: color, backgroundColor: isGivenByMe ? `${color}10` : undefined }}
+        >
+            <span className={icon.length > 2 ? "material-symbols-outlined text-3xl" : "text-3xl"}>{icon}</span>
         </div>
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
-        <span className="text-sm font-black dark:text-white px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-full">{count}</span>
+        <span className={`text-[10px] font-black uppercase tracking-widest ${isGivenByMe ? 'text-primary' : 'text-gray-400'}`}>{label}</span>
+        <span className={`text-sm font-black px-3 py-1 rounded-full transition-all ${isGivenByMe ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'dark:text-white bg-gray-50 dark:bg-gray-800'}`}>{count}</span>
     </div>
 );
 

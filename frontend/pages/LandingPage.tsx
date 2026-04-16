@@ -9,8 +9,8 @@ const LandingPage: React.FC = () => {
   const { settings } = useSettings();
 
   return (
-    <div className="flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b border-[#e7ebf3] bg-white/80 backdrop-blur-md">
+    <div className="flex flex-col bg-white dark:bg-gray-950 transition-colors duration-300">
+      <header className="sticky top-0 z-50 w-full border-b border-[#e7ebf3] dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         <div className="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 text-primary">
             {settings.LOGO_URL ? (
@@ -18,15 +18,15 @@ const LandingPage: React.FC = () => {
             ) : (
               <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
             )}
-            <h2 className="text-[#0d121b] text-xl font-extrabold tracking-tight">{settings.APP_NAME || 'EduConnect CG'}</h2>
+            <h2 className="text-[#0d121b] dark:text-gray-100 text-xl font-extrabold tracking-tight">{settings.APP_NAME || 'EduConnect CG'}</h2>
           </div>
           <nav className="hidden md:flex gap-9">
-            <a href="#sobre" className="text-sm font-medium hover:text-primary transition-colors">Sobre</a>
-            <a href="#recursos" className="text-sm font-medium hover:text-primary transition-colors">Recursos</a>
-            <a href="#escolas" className="text-sm font-medium hover:text-primary transition-colors">Escolas</a>
+            <a href="#sobre" className="text-sm font-medium dark:text-gray-300 hover:text-primary transition-colors">Sobre</a>
+            <a href="#recursos" className="text-sm font-medium dark:text-gray-300 hover:text-primary transition-colors">Recursos</a>
+            <a href="#escolas" className="text-sm font-medium dark:text-gray-300 hover:text-primary transition-colors">Escolas</a>
           </nav>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/login')}
             className="bg-primary text-white text-sm font-bold px-6 py-2 rounded-lg hover:opacity-90 transition-all shadow-md active:scale-95"
           >
             Entrar
@@ -61,25 +61,25 @@ const LandingPage: React.FC = () => {
 
         {/* Stats */}
         <section className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10">
-          <div className="bg-white p-8 rounded-2xl border border-[#cfd7e7] shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-[#cfd7e7] dark:border-gray-800 shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
             <span className="material-symbols-outlined text-primary text-5xl mb-3">school</span>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Alunos</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Alunos</p>
             <p className="text-primary text-4xl font-black">15k+</p>
           </div>
-          <div className="bg-white p-8 rounded-2xl border border-[#cfd7e7] shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-[#cfd7e7] dark:border-gray-800 shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
             <span className="material-symbols-outlined text-primary text-5xl mb-3">person_pin</span>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Professores</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Professores</p>
             <p className="text-primary text-4xl font-black">2k+</p>
           </div>
-          <div className="bg-white p-8 rounded-2xl border border-[#cfd7e7] shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-[#cfd7e7] dark:border-gray-800 shadow-sm text-center flex flex-col items-center hover:-translate-y-1 transition-transform">
             <span className="material-symbols-outlined text-primary text-5xl mb-3">location_city</span>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Escolas</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Escolas</p>
             <p className="text-primary text-4xl font-black">120+</p>
           </div>
         </section>
 
         {/* Features */}
-        <section id="recursos" className="bg-white py-20 px-6">
+        <section id="recursos" className="bg-white dark:bg-gray-950 py-20 px-6 transition-colors duration-300">
           <div className="max-w-[1200px] mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Recursos da Plataforma</h2>
             <div className="h-1.5 w-20 bg-accent-orange mx-auto rounded-full"></div>
@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
         </section>
       </main>
 
-      <footer className="bg-[#f6f6f8] py-16 px-6 border-t border-[#e7ebf3]">
+      <footer className="bg-[#f6f6f8] dark:bg-gray-900 py-16 px-6 border-t border-[#e7ebf3] dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>
             <div className="flex items-center gap-2 text-primary mb-6">
@@ -113,15 +113,15 @@ const LandingPage: React.FC = () => {
               ) : (
                 <span className="material-symbols-outlined font-fill-1">auto_awesome</span>
               )}
-              <h2 className="text-lg font-bold">{settings.APP_NAME || 'EduConnect CG'}</h2>
+              <h2 className="text-lg font-bold dark:text-gray-100">{settings.APP_NAME || 'EduConnect CG'}</h2>
             </div>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
               Plataforma oficial da Secretaria Municipal de Educação de {settings.APP_NAME?.replace('EduConnect ', '') || 'Campina Grande'} para integração e comunicação da rede pública de ensino.
             </p>
           </div>
           <div>
-            <h3 className="font-bold text-[#0d121b] mb-6">Links Rápidos</h3>
-            <ul className="text-sm text-gray-500 space-y-3">
+            <h3 className="font-bold text-[#0d121b] dark:text-gray-100 mb-6">Links Rápidos</h3>
+            <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-3">
               <li><a href="#" className="hover:text-primary transition-colors">Portal do Aluno</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Portal do Professor</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">SME {settings.APP_NAME?.replace('EduConnect ', '') || 'Campina Grande'}</a></li>
@@ -129,15 +129,15 @@ const LandingPage: React.FC = () => {
             </ul>
           </div>
           <div>
-            <h3 className="font-bold text-[#0d121b] mb-6">Contato</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="font-bold text-[#0d121b] dark:text-gray-100 mb-6">Contato</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Av. Rio Branco, S/N - Centro<br />
               {settings.APP_NAME?.replace('EduConnect ', '') || 'Campina Grande'} - PB<br />
               contato@educonnectcg.com.br
             </p>
           </div>
         </div>
-        <div className="text-center mt-12 pt-8 border-t border-[#e7ebf3] text-xs text-gray-400">
+        <div className="text-center mt-12 pt-8 border-t border-[#e7ebf3] dark:border-gray-800 text-xs text-gray-400">
           © {new Date().getFullYear()} {settings.APP_NAME || 'EduConnect CG'}. Desenvolvido para a Prefeitura de {settings.APP_NAME?.replace('EduConnect ', '') || 'Campina Grande'}.
         </div>
       </footer>
@@ -146,12 +146,12 @@ const LandingPage: React.FC = () => {
 };
 
 const FeatureCard: React.FC<{ icon: string, title: string, desc: string }> = ({ icon, title, desc }) => (
-  <div className="p-8 rounded-2xl bg-[#f6f6f8] border border-[#cfd7e7] hover:shadow-lg transition-all group">
+  <div className="p-8 rounded-2xl bg-[#f6f6f8] dark:bg-gray-900 border border-[#cfd7e7] dark:border-gray-800 hover:shadow-lg transition-all group">
     <div className="bg-primary/10 w-14 h-14 rounded-xl flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
       <span className="material-symbols-outlined text-3xl">{icon}</span>
     </div>
-    <h3 className="text-xl font-bold mb-3">{title}</h3>
-    <p className="text-gray-500 leading-relaxed">{desc}</p>
+    <h3 className="text-xl font-bold mb-3 dark:text-gray-100">{title}</h3>
+    <p className="text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
   </div>
 );
 

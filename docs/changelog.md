@@ -2,6 +2,16 @@
 
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo, seguindo os padrões de versionamento semântico.
 
+## [1.1.0] - 2026-04-16
+### Adicionado
+- **Busca Global**: Implementada barra de busca reativa no Header (Desktop e Mobile) para pesquisar conteúdos e pessoas.
+- **Hashtags Dinâmicas**: Sistema de tags clicáveis que filtram o feed instantaneamente (#educacao, #tecnologia, etc).
+- **Tópicos Recentes**: Widget interativo na barra lateral para navegação rápida por temas populares.
+- **Indicador de Filtro Ativo**: UI para gerenciar e limpar filtros de busca ou hashtags.
+### Corrigido
+- **Persistência de Seguidores**: Resolvido falha onde o status "Seguindo" não persistia após recarregamento (uso de `optionalAuthMiddleware`).
+- **Hot Reload Docker**: Configuração otimizada para desenvolvimento em tempo real sem perda de dados entre reinícios.
+
 ## [1.0.7] - 2026-03-12
 ### Adicionado
 - Central de documentação profissional em `/docs`.

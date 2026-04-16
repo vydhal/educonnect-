@@ -37,6 +37,13 @@
       .font-fill-1 {
         font-variation-settings: 'FILL' 1;
       }
+      @keyframes pulse-subtle {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+      .animate-pulse-subtle {
+        animation: pulse-subtle 2s infinite ease-in-out;
+      }
     </style>
   <script type="importmap">
 {

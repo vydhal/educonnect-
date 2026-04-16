@@ -34,3 +34,26 @@ export const adminMiddleware = (req: AuthenticatedRequest, res: Response, next: 
   }
   next();
 };
+
+export const optionalAuthMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+        console.log('Optional Auth: Identified user', decoded.userId);
+        req.userId = decoded.userId;
+        req.userRole = decoded.role;
+      } else {
+        console.log('Optional Auth: Header exists but no token');
+      }
+    } else {
+      console.log('Optional Auth: No Authorization header present');
+    }
+    next();
+  } catch (error) {
+    console.log('Optional Auth: Token verification failed', error instanceof Error ? error.message : error);
+    next();
+  }
+};

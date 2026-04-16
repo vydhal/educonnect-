@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IMAGES } from '../constants';
-import { authAPI } from '../api';
-import { setAuthToken } from '../api';
+import { authAPI, setAuthToken } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirectPath = searchParams.get('redirect');
+
   const { settings } = useSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,12 +21,10 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Small delay or direct check? Direct is faster.
-      // We could verify token here, but simple redirect is usually enough 
-      // as the FeedPage will handle invalid tokens by redirecting back.
-      navigate('/feed', { replace: true });
+      const target = redirectPath || '/feed';
+      navigate(target, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, redirectPath]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +40,7 @@ const LoginPage: React.FC = () => {
         if (userRole === 'ADMIN') {
           navigate('/admin');
         } else {
-          navigate('/feed');
+          navigate(redirectPath || '/feed');
         }
       } else {
         setError(response.message || 'Erro ao fazer login');
@@ -52,7 +53,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Left: Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary overflow-hidden">
         <div
@@ -85,7 +86,7 @@ const LoginPage: React.FC = () => {
       </div>
 
       {/* Right: Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 py-16">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 py-16 dark:bg-gray-950 transition-colors duration-300">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-10 text-primary">
             {settings.LOGO_URL ? (
@@ -105,8 +106,8 @@ const LoginPage: React.FC = () => {
               )}
               <h2 className="text-xl font-bold">{settings.APP_NAME || 'EduConnect CG'}</h2>
             </div>
-            <h1 className="text-3xl font-black text-[#0d121b] mb-2">Acesse sua conta</h1>
-            <p className="text-gray-500">Entre com suas credenciais da rede municipal.</p>
+            <h1 className="text-3xl font-black text-[#0d121b] dark:text-gray-100 mb-2">Acesse sua conta</h1>
+            <p className="text-gray-500 dark:text-gray-400">Entre com suas credenciais da rede municipal.</p>
             <button onClick={() => navigate('/about')} className="text-sm text-primary font-black uppercase tracking-widest hover:underline mt-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">info</span>
               Saiba mais sobre a plataforma
@@ -114,28 +115,28 @@ const LoginPage: React.FC = () => {
           </header>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg text-red-700 dark:text-red-400 text-sm font-medium">
               {error}
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleLogin}>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary px-4 outline-none transition-all focus:bg-white border-2 focus:border-primary/20 disabled:opacity-50"
+                className="w-full h-14 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-primary px-4 outline-none transition-all focus:bg-white dark:focus:bg-gray-800 border-2 focus:border-primary/20 disabled:opacity-50"
                 placeholder="seu.email@educonnect.com"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-bold text-gray-700">Senha</label>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Senha</label>
                 <button
                   type="button"
                   onClick={() => navigate('/forgot-password')}
@@ -151,13 +152,13 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="w-full h-14 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary pl-4 pr-12 outline-none transition-all focus:bg-white border-2 focus:border-primary/20 disabled:opacity-50"
+                  className="w-full h-14 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-primary pl-4 pr-12 outline-none transition-all focus:bg-white dark:focus:bg-gray-800 border-2 focus:border-primary/20 disabled:opacity-50"
                   placeholder="Sua senha de acesso"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
                 </button>
@@ -165,8 +166,8 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="remember" className="rounded text-primary focus:ring-primary border-gray-300 size-4" />
-              <label htmlFor="remember" className="text-sm text-gray-600">Lembrar de mim</label>
+              <input type="checkbox" id="remember" className="rounded text-primary focus:ring-primary border-gray-300 dark:border-gray-700 dark:bg-gray-800 size-4" />
+              <label htmlFor="remember" className="text-sm text-gray-600 dark:text-gray-400">Lembrar de mim</label>
             </div>
 
             <button
@@ -179,8 +180,8 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-12 text-center pt-8 border-t border-gray-100">
-            <p className="text-gray-600">
+          <div className="mt-12 text-center pt-8 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400">
               Novo na rede municipal?
               <button
                 onClick={() => navigate('/profile-selection')}

@@ -32,7 +32,7 @@ const AdminLayout: React.FC = () => {
     const closeSidebar = () => setIsSidebarOpen(false);
 
     return (
-        <div className="flex min-h-screen bg-[#f6f6f8] text-[#0d121b] overflow-x-hidden">
+        <div className="flex min-h-screen bg-[#f6f6f8] dark:bg-gray-950 text-[#0d121b] dark:text-gray-100 overflow-x-hidden transition-colors duration-300">
             {/* Mobile Header Overlay */}
             <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={closeSidebar} />
 
@@ -67,7 +67,7 @@ const AdminLayout: React.FC = () => {
 
                 <nav className="flex-1 px-4 mt-4 space-y-1 overflow-y-auto custom-scrollbar">
                     <SidebarItem icon="dashboard" label="Dashboard" path="/admin" active={isActive('/admin')} onClick={closeSidebar} />
-                    <SidebarItem icon="verified_user" label="Moderação" path="/admin/moderation" active={isActive('/admin/moderation')} onClick={closeSidebar} />
+                    <SidebarItem icon="workspace_premium" label="Selos" path="/admin/badges" active={isActive('/admin/badges')} onClick={closeSidebar} />
                     <SidebarItem icon="group" label="Usuários" path="/admin/users" active={isActive('/admin/users')} onClick={closeSidebar} />
                     <SidebarItem icon="school" label="Escolas" path="/admin/schools" active={isActive('/admin/schools')} onClick={closeSidebar} />
                     <SidebarItem icon="calendar_month" label="Eventos" path="/admin/events" active={isActive('/admin/events')} onClick={closeSidebar} />
