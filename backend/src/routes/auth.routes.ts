@@ -202,17 +202,27 @@ async function processExternalLogin(portalUser: PortalUser) {
 
   let user = await prisma.user.findUnique({ where: { email } });
 
-  // Create unified list of schools to process (avoiding duplicates)
-  const schoolsToProcess = Array.from(new Set([
-    ...(schoolName ? [schoolName] : []),
+  // Handle both legacy schoolName (string) and new schools (array of objects)
+  const incomingSchools = [
+    ...(schoolName ? [{ name: schoolName } as any] : []),
     ...(schools || [])
-  ]));
+  ];
+
+  // Deduplicate by INEP (if available) or Name
+  const seen = new Set<string>();
+  const schoolsToProcess = incomingSchools.filter(s => {
+    const key = (s.inep || s.name).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   // Find or Create all school units
   const schoolRecords = await Promise.all(
     schoolsToProcess.map(s => getOrCreateSchool(s))
   );
   const validSchoolIds = schoolRecords.map(s => s?.id).filter((id): id is string => !!id);
+  const primarySchoolName = schoolRecords[0]?.name || null;
 
   // JIT Provisioning
   if (!user) {
@@ -225,7 +235,7 @@ async function processExternalLogin(portalUser: PortalUser) {
         name,
         role: mappedRole,
         password: hashedPassword,
-        school: schoolsToProcess[0] || null, // Primary school string
+        school: primarySchoolName, // Primary school string
         schoolId: validSchoolIds[0] || null,  // Primary school ID
         verified: true,
         memberOfSchools: {
@@ -234,13 +244,16 @@ async function processExternalLogin(portalUser: PortalUser) {
       }
     });
   } else {
-    // Update existing user with new school links
+    // Update existing user with new school links and potentially new Role
+    const mappedRole = mapPortalRole(role);
+    
     await prisma.user.update({
       where: { id: user.id },
       data: {
+        role: mappedRole, // Allow role updates via Portal (e.g. Aluno -> EquipeEscolar)
         // Only update primary schoolId if it was null
         schoolId: user.schoolId || validSchoolIds[0] || null,
-        school: user.school || schoolsToProcess[0] || null,
+        school: user.school || primarySchoolName,
         memberOfSchools: {
           set: validSchoolIds.map(id => ({ id })) // Sync with current Portal list
         }

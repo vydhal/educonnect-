@@ -6,27 +6,45 @@ const PORTAL_API_URL = process.env.PORTAL_API_URL;
 const PORTAL_API_KEY = process.env.PORTAL_API_KEY;
 const SOCIAL_SSO_SECRET = process.env.SOCIAL_SSO_SECRET;
 
+export interface PortalSchool {
+  id: string;
+  name: string;
+  inep?: string;
+  address?: string;
+  zone?: string;
+  schoolType?: string;
+}
+
 export interface PortalUser {
   email: string;
   name: string;
   role: string;
   schoolName?: string;
-  schools?: string[];
+  schools?: PortalSchool[];
 }
 
 const ROLE_MAP: Record<string, string> = {
   'ADMIN': 'ADMIN',
   'TEACHER': 'PROFESSOR',
   'STUDENT': 'ALUNO',
-  'MANAGER': 'GESTOR',
-  'PEDAGOGICAL': 'COORDENADOR',
-  'SUPERVISOR': 'SUPERVISOR',
-  'COORDINATOR': 'COORDENADOR',
-  'SECRETARY': 'GESTOR',
+  'SEDUC': 'SEDUC',
+  'SECRETARY': 'EQUIPE_ESCOLAR',
+  'MANAGER': 'EQUIPE_ESCOLAR',
+  'COORDINATOR': 'EQUIPE_ESCOLAR',
+  'PEDAGOGICAL': 'EQUIPE_ESCOLAR',
+  'SUPERVISOR': 'EQUIPE_ESCOLAR',
+  'DIRECTOR': 'EQUIPE_ESCOLAR',
+  'PEDAGOG_COORDINATOR': 'EQUIPE_ESCOLAR',
+  'PEDAGOGICAL_SUPPORT': 'EQUIPE_ESCOLAR',
+  'PSYCHOLOGIST': 'EQUIPE_ESCOLAR',
+  'SOCIAL_WORKER': 'EQUIPE_ESCOLAR',
+  'GUIDANCE_COUNSELOR': 'EQUIPE_ESCOLAR',
+  'PEDAGOGICAL_ADVISOR': 'EQUIPE_ESCOLAR',
+  'EQUIPE_ESCOLAR': 'EQUIPE_ESCOLAR',
 };
 
 export const mapPortalRole = (portalRole: string): string => {
-  return ROLE_MAP[portalRole] || 'ALUNO';
+  return ROLE_MAP[portalRole] || portalRole || 'ALUNO';
 };
 
 export const validateSSOToken = (token: string): PortalUser | null => {
@@ -66,27 +84,47 @@ export const verifyPortalCredentials = async (email: string, password: string): 
   }
 };
 
-export const getOrCreateSchool = async (schoolName: string) => {
-  if (!schoolName) return null;
+export const getOrCreateSchool = async (schoolData: PortalSchool | string) => {
+  if (!schoolData) return null;
 
-  // Find school by name (Role ESCOLA)
+  const name = typeof schoolData === 'string' ? schoolData : schoolData.name;
+  const inep = typeof schoolData === 'string' ? undefined : schoolData.inep;
+
+  // Try to find school by INEP or Name (Role ESCOLA)
   let school = await prisma.user.findFirst({
     where: {
-      name: { equals: schoolName, mode: 'insensitive' },
+      OR: [
+        ...(inep ? [{ inep: { equals: inep } }] : []),
+        { name: { equals: name, mode: 'insensitive' } }
+      ],
       role: 'ESCOLA'
     }
   });
 
   if (!school) {
-    // Create new school unit
+    // Create new school unit with metadata
     school = await prisma.user.create({
       data: {
-        email: `escola.${schoolName.toLowerCase().replace(/\s+/g, '.')}@educampina.local`,
+        email: `escola.${name.toLowerCase().replace(/\s+/g, '.')}@educampina.local`,
         password: 'EXTERNAL_SSO_PLACEHOLDER',
-        name: schoolName,
+        name: name,
         role: 'ESCOLA',
         verified: true,
-        schoolType: 'Municipal'
+        inep: inep || null,
+        address: typeof schoolData === 'string' ? null : schoolData.address || null,
+        zone: typeof schoolData === 'string' ? null : schoolData.zone || null,
+        schoolType: typeof schoolData === 'string' ? 'Municipal' : schoolData.schoolType || 'Municipal'
+      }
+    });
+  } else if (typeof schoolData !== 'string') {
+    // Update existing school with metadata if missing
+    await prisma.user.update({
+      where: { id: school.id },
+      data: {
+        inep: school.inep || schoolData.inep || null,
+        address: school.address || schoolData.address || null,
+        zone: school.zone || schoolData.zone || null,
+        schoolType: school.schoolType || schoolData.schoolType || 'Municipal'
       }
     });
   }
