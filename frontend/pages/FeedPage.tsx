@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { postsAPI, authAPI, usersAPI, socialAPI, externalAPI } from '../api';
+import { postsAPI, authAPI, usersAPI, socialAPI, externalAPI, getMediaUrl } from '../api';
 import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
 import { RichCommentInput } from '../components/RichCommentInput';
 import { IMAGES } from '../constants';
-import { PostItem } from '../components/PostItem';
 import { Header } from '../components/Header';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { useModal } from '../contexts/ModalContext';
@@ -78,21 +77,20 @@ const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?:
       >
         <div
           className="size-10 bg-gray-100 rounded-xl shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all duration-300"
-          style={{ backgroundImage: `url(${avatar || IMAGES.DEFAULT_AVATAR})` }}
+          style={{ backgroundImage: `url(${getMediaUrl(avatar) || IMAGES.DEFAULT_AVATAR})` }}
         />
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black truncate group-hover:text-primary transition-colors uppercase tracking-tight leading-tight">{name}</p>
           <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest opacity-60 truncate">{type}</p>
         </div>
       </div>
-      <button 
+      <button
         onClick={handleFollow}
         disabled={loading}
-        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
-          followed 
-            ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100' 
+        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${followed
+            ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100'
             : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white shadow-lg shadow-primary/10'
-        }`}
+          }`}
       >
         {loading ? '...' : (followed ? 'Favoritado' : 'Favoritar')}
       </button>
@@ -123,7 +121,7 @@ const MilestonesWidget: React.FC = () => {
       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
         <span className="material-symbols-outlined text-6xl text-primary rotate-12">auto_awesome</span>
       </div>
-      
+
       <h3 className="font-bold text-xs mb-4 flex items-center gap-2 text-primary uppercase tracking-wider">
         <span className="material-symbols-outlined text-sm">celebration</span>
         Marcos da Rede
@@ -223,9 +221,9 @@ const FeedPage: React.FC = () => {
   const searchQuery = searchParams.get('search');
 
   useEffect(() => {
-    fetchPosts({ 
-      tag: activeTag || undefined, 
-      search: searchQuery || undefined 
+    fetchPosts({
+      tag: activeTag || undefined,
+      search: searchQuery || undefined
     });
     socialAPI.getTrendingTags().then(setTrendingTags).catch(console.error);
     socialAPI.getEvents().then(setEvents).catch(console.error);
@@ -343,7 +341,7 @@ const FeedPage: React.FC = () => {
 
   const handleDeleteComment = async (commentId: string) => {
     if (!interactionModal.postId) return;
-    
+
     // Simple confirmation using window.confirm for now, or use showModal if complex logic needed
     if (!window.confirm('Tem certeza que deseja excluir este comentário?')) return;
 
@@ -390,9 +388,9 @@ const FeedPage: React.FC = () => {
               const match = part.match(/@\[([^\]]+)\]\(([^\)]+)\)/);
               if (match) {
                 return (
-                  <span 
-                    key={index} 
-                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${match[2]}`); }} 
+                  <span
+                    key={index}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${match[2]}`); }}
                     className="text-primary font-bold hover:underline cursor-pointer"
                   >
                     {match[1]}
@@ -404,12 +402,12 @@ const FeedPage: React.FC = () => {
             } else if (part.startsWith('#')) {
               const tag = part.substring(1);
               return (
-                <span 
-                  key={index} 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
+                <span
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSearchParams({ tag });
-                  }} 
+                  }}
                   className="text-primary font-black hover:bg-primary/10 px-1 rounded transition-colors cursor-pointer"
                 >
                   {part}
@@ -434,7 +432,7 @@ const FeedPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden sticky top-20">
             <div className="h-16 bg-gradient-to-r from-primary to-blue-400"></div>
             <div className="px-4 pb-4 -mt-8 flex flex-col items-center">
-              <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${user?.avatar || IMAGES.DEFAULT_AVATAR})` }} />
+              <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
               <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
               {user?.school && <p className="text-xs font-bold text-primary mt-1 text-center">{user.school}</p>}
@@ -462,7 +460,7 @@ const FeedPage: React.FC = () => {
                         title={visitor.name}
                         onClick={() => navigate(`/profile/${visitor.id}`)}
                         className="size-10 rounded-xl bg-cover bg-center border border-gray-100 dark:border-gray-700 cursor-pointer hover:ring-2 ring-primary transition-all shadow-sm"
-                        style={{ backgroundImage: `url(${visitor.avatar || `https://ui-avatars.com/api/?name=${visitor.name}&background=random`})` }}
+                        style={{ backgroundImage: `url(${getMediaUrl(visitor.avatar) || `https://ui-avatars.com/api/?name=${visitor.name}&background=random`})` }}
                       />
                     ))}
                   </div>
@@ -480,8 +478,8 @@ const FeedPage: React.FC = () => {
                 <div className="space-y-3">
                   {trendingTags.length > 0 ? (
                     trendingTags.map(tag => (
-                      <button 
-                        key={tag.name} 
+                      <button
+                        key={tag.name}
                         onClick={() => setSearchParams({ tag: tag.name })}
                         className="flex items-center justify-between w-full group text-left"
                       >
@@ -514,7 +512,7 @@ const FeedPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setSearchParams({})}
                 className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 rounded-xl text-xs font-black transition-all shadow-sm border border-gray-100 dark:border-gray-700"
               >
@@ -526,9 +524,9 @@ const FeedPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-xl p-4 md:p-5 shadow-sm border dark:border-gray-800">
             <div className="flex gap-4 items-center">
-              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
-              <button 
-                onClick={() => setIsModalOpen(true)} 
+              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
+              <button
+                onClick={() => setIsModalOpen(true)}
                 className="flex-1 text-left bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-2xl px-5 py-3.5 text-xs md:text-sm font-medium transition-all border border-gray-100 dark:border-gray-700 shadow-inner"
               >
                 No que você está pensando hoje?
@@ -548,7 +546,7 @@ const FeedPage: React.FC = () => {
                     <div
                       onClick={() => navigate(`/profile/${post.authorId}`)}
                       className="size-12 rounded-full bg-cover bg-center shrink-0 border cursor-pointer hover:ring-2 ring-primary transition-all"
-                      style={{ backgroundImage: `url(${post.authorAvatar})` }}
+                      style={{ backgroundImage: `url(${getMediaUrl(post.authorAvatar)})` }}
                     />
                     <div>
                       <div className="flex items-center gap-1">
@@ -604,14 +602,14 @@ const FeedPage: React.FC = () => {
                     onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
                     className="flex items-center justify-center gap-1.5 py-3 text-[10px] md:text-sm font-black uppercase tracking-tight text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-xl md:text-2xl">chat</span> 
+                    <span className="material-symbols-outlined text-xl md:text-2xl">chat</span>
                     <span>{post.comments > 0 ? `(${post.comments})` : 'Comentar'}</span>
                   </button>
                   <button
                     onClick={() => setInteractionModal({ type: 'send', postId: post.id })}
                     className="flex items-center justify-center gap-1.5 py-3 text-[10px] md:text-sm font-black uppercase tracking-tight text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-xl md:text-2xl">share</span> 
+                    <span className="material-symbols-outlined text-xl md:text-2xl">share</span>
                     <span>Enviar</span>
                   </button>
                 </div>
@@ -623,7 +621,7 @@ const FeedPage: React.FC = () => {
         <aside className="hidden lg:block lg:col-span-3">
           <div className="sticky top-20 space-y-4">
             <MilestonesWidget />
-            
+
             <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
               <h3 className="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm text-primary">favorite</span>
@@ -645,7 +643,7 @@ const FeedPage: React.FC = () => {
                   <div className="flex flex-col items-center gap-2 py-6 text-center">
                     <span className="material-symbols-outlined text-3xl text-gray-200">explore</span>
                     <p className="text-[10px] text-gray-400 font-medium">Você ainda não favoritou nenhuma unidade.</p>
-                    <button 
+                    <button
                       onClick={() => navigate('/network')}
                       className="text-[10px] font-black text-primary hover:underline"
                     >
@@ -726,7 +724,7 @@ const FeedPage: React.FC = () => {
               ) : (
                 activePostComments.map(comment => (
                   <div key={comment.id} className="flex gap-3">
-                    <div className="size-8 rounded-full bg-gray-200 shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(${comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.name}&background=random`})` }} />
+                    <div className="size-8 rounded-full bg-gray-200 shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(${getMediaUrl(comment.author.avatar) || `https://ui-avatars.com/api/?name=${comment.author.name}&background=random`})` }} />
                     <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none text-sm w-full">
                       <div className="flex justify-between items-center mb-1">
                         <p className="font-bold text-xs">{comment.author.name}</p>
@@ -734,20 +732,20 @@ const FeedPage: React.FC = () => {
                           <span className="text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</span>
                           {user && (user.id === comment.author.id || user.role === 'ADMIN') && (
                             <div className="flex gap-1">
-                               <button 
-                                 onClick={() => setEditingComment(comment)}
-                                 className="text-gray-400 hover:text-primary transition-colors"
-                                 title="Editar"
-                               >
-                                 <span className="material-symbols-outlined text-xs">edit</span>
-                               </button>
-                               <button 
-                                 onClick={() => handleDeleteComment(comment.id)}
-                                 className="text-gray-400 hover:text-red-500 transition-colors"
-                                 title="Excluir"
-                               >
-                                 <span className="material-symbols-outlined text-xs">delete</span>
-                               </button>
+                              <button
+                                onClick={() => setEditingComment(comment)}
+                                className="text-gray-400 hover:text-primary transition-colors"
+                                title="Editar"
+                              >
+                                <span className="material-symbols-outlined text-xs">edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                title="Excluir"
+                              >
+                                <span className="material-symbols-outlined text-xs">delete</span>
+                              </button>
                             </div>
                           )}
                         </div>
@@ -765,10 +763,10 @@ const FeedPage: React.FC = () => {
                   <button onClick={() => setEditingComment(null)} className="text-xs font-black text-gray-500 hover:text-red-500">Cancelar</button>
                 </div>
               ) : null}
-              
-              <RichCommentInput 
+
+              <RichCommentInput
                 onSubmit={editingComment ? handleUpdateComment : handleCommentSubmit}
-                userAvatar={user?.avatar}
+                userAvatar={getMediaUrl(user?.avatar)}
                 initialContent={editingComment?.content || ''}
                 placeholder={editingComment ? "Edite seu comentário..." : "Escreva um comentário..."}
                 submitLabel={editingComment ? "Salvar" : "Enviar"}
@@ -784,7 +782,7 @@ const FeedPage: React.FC = () => {
       {interactionModal.type === 'send' && (
         <InteractionModal title="Compartilhar" onClose={() => setInteractionModal({ type: null, postId: null })}>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
-            <button 
+            <button
               onClick={() => {
                 const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
                 window.open(`https://api.whatsapp.com/send?text=Confira este post no EduConnect: ${postUrl}`, '_blank');
@@ -797,7 +795,7 @@ const FeedPage: React.FC = () => {
               <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-emerald-500">WhatsApp</span>
             </button>
 
-            <button 
+            <button
               onClick={() => {
                 const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
                 navigator.clipboard.writeText(postUrl);
@@ -811,7 +809,7 @@ const FeedPage: React.FC = () => {
               <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-blue-500">Copiar Link</span>
             </button>
 
-            <button 
+            <button
               onClick={() => {
                 const postUrl = `${window.location.origin}/#/post/${interactionModal.postId}`;
                 if (navigator.share) {

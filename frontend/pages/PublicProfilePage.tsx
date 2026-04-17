@@ -537,15 +537,21 @@ const BadgeIcon: React.FC<{ icon: string, label: string, color: string, isActive
     <button
         onClick={onClick}
         title={isActive ? `Selo já concedido (Clique para retirar)` : `Dar selo de ${label}`}
-        className="flex flex-col items-center gap-1.5 group scale-90 hover:scale-100 transition-all"
+        className="flex flex-col items-center gap-1.5 group scale-90 hover:scale-105 transition-all relative"
     >
         <div 
-           className={`size-11 rounded-2xl flex items-center justify-center transition-all shadow-sm border ${isActive ? 'grayscale dark:grayscale-[0.5] opacity-50 bg-gray-100 dark:bg-gray-800' : 'grayscale-0 bg-white dark:bg-gray-900 border-primary/20 shadow-primary/5'}`}
-           style={{ color: isActive ? '#94a3b8' : color }}
+           className={`size-11 rounded-2xl flex items-center justify-center transition-all shadow-md border ${isActive ? 'bg-primary/5 border-primary shadow-primary/20 ring-2 ring-primary/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 shadow-sm'}`}
+           style={{ color: color }}
         >
             <span className={icon.length > 2 ? "material-symbols-outlined text-xl" : "text-xl"}>{icon}</span>
+            
+            {isActive && (
+                <div className="absolute -top-1.5 -right-1.5 size-5 bg-primary text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300 ring-2 ring-white dark:ring-gray-900">
+                    <span className="material-symbols-outlined text-[12px] font-black">check</span>
+                </div>
+            )}
         </div>
-        <span className={`text-[9px] font-black uppercase tracking-tighter truncate w-14 text-center ${isActive ? 'text-gray-400' : 'text-primary'}`}>{label}</span>
+        <span className={`text-[9px] font-black uppercase tracking-tighter truncate w-14 text-center ${isActive ? 'text-primary' : 'text-gray-400'}`}>{label}</span>
     </button>
 );
 

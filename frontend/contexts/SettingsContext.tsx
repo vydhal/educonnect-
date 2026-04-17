@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { settingsAPI, adminAPI } from '../api';
+import { settingsAPI, adminAPI, getMediaUrl } from '../api';
 
 interface SettingsContextType {
     settings: any;
@@ -79,7 +79,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 link.rel = 'icon';
                 document.head.appendChild(link);
             }
-            link.href = data.FAVICON_URL;
+            link.href = getMediaUrl(data.FAVICON_URL);
         }
     };
 

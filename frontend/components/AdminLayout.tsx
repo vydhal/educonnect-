@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
+import { getMediaUrl } from '../api';
 
 const SidebarItem: React.FC<{ icon: string, label: string, path: string, active?: boolean, onClick?: () => void }> = ({ icon, label, path, active, onClick }) => {
     const navigate = useNavigate();
@@ -54,7 +55,7 @@ const AdminLayout: React.FC = () => {
                 <div className="p-8 flex items-center gap-3">
                     <div className="bg-primary size-10 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden shadow-lg shadow-primary/30" onClick={() => navigate('/admin')}>
                         {settings.LOGO_URL ? (
-                            <img src={settings.LOGO_URL} alt="Logo" className="w-full h-full object-cover" />
+                            <img src={getMediaUrl(settings.LOGO_URL)} alt="Logo" className="w-full h-full object-cover" />
                         ) : (
                             <span className="material-symbols-outlined text-white font-fill-1">school</span>
                         )}

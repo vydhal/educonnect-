@@ -2,22 +2,29 @@
 // Determine API base URL - prioritize environment variable, then use port 5000 on current host
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
-  const currentOrigin = window.location.origin;
+  const { protocol, hostname } = window.location;
 
-  // If we are on production domain but envUrl points to localhost, ignore envUrl
-  if (envUrl && envUrl.includes('localhost') && !currentOrigin.includes('localhost')) {
-    return `${currentOrigin}/api`;
+  // Se estivermos no localhost ou IP de rede, vamos garantir a porta 5001
+  if (!envUrl || envUrl.includes(':5000') || envUrl.includes(':5001')) {
+    return `${protocol}//${hostname}:5001/api`;
   }
 
-  if (envUrl && envUrl.trim() !== '') {
-    return envUrl;
-  }
-
-  return `${currentOrigin}/api`;
+  return envUrl;
 };
 
 const API_URL = getApiUrl();
-console.log('Final API_URL:', API_URL);
+
+// Helper to get full URL for media/uploads
+export const getMediaUrl = (path: string | null | undefined) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  // Remove /api from end of API_URL to get base host
+  const baseHost = API_URL.replace(/\/api$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  
+  return `${baseHost}${cleanPath}`;
+};
 
 let token: string | null = localStorage.getItem('token');
 
@@ -44,7 +51,6 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
   }
 
   const url = `${API_URL}${endpoint}`;
-  console.log('API Request:', url);
 
   try {
     const response = await fetch(url, {
@@ -53,15 +59,18 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 && !endpoint.includes('/auth/login')) {
         clearAuthToken();
         window.location.href = '/login';
       }
-      const error = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      
+      const text = await response.text();
+      const error = text ? JSON.parse(text) : { error: `HTTP ${response.status}` };
       throw new Error(error.error || `API error: ${response.status}`);
     }
 
-    return response.json();
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
   } catch (err: any) {
     console.error('Fetch error:', err);
     throw err;

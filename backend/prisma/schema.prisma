@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
@@ -12,116 +9,102 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  password  String
-  name      String
-  role      String     @default("ALUNO") // PROFESSOR, ALUNO, ESCOLA, COMUNIDADE, ADMIN
-  avatar    String?
-  bio       String?
-  school    String?
-  verified  Boolean    @default(false)
-  
-  // School Specific Fields
-  inep      String?
-  address   String?
-  zone      String?    // 'URBANA' | 'RURAL'
-  phone     String?
-  schoolType String?   // 'ESCOLA' | 'CRECHE' | 'CMEI'
-
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  // Relations
-  posts     Post[]
-  comments  Comment[]
-  likes     Like[]
-  followers UserFollow[] @relation("following")
-  following UserFollow[] @relation("follower")
-  projects  Project[]
-  moderationItems ModerationItem[]
- 
-  // Social interactions
-  badgesGiven    Badge[] @relation("badgeGiver")
-  badgesReceived Badge[] @relation("badgeReceiver")
-  viewsObserved  ProfileView[] @relation("viewer")
-  profileViews   ProfileView[] @relation("profileOwner")
-  testimonialsSent     Testimonial[] @relation("testimonialSender")
-  testimonialsReceived Testimonial[] @relation("testimonialReceiver")
- 
-  // Notifications
-  notificationsReceived Notification[] @relation("recipientNotifications")
-  notificationsSent     Notification[] @relation("senderNotifications")
-
-  // School-Teacher Relation
-  schoolId  String?
-  worksAt   User?   @relation("SchoolTeachers", fields: [schoolId], references: [id])
-  teachers  User[]  @relation("SchoolTeachers")
-
-  // Project Relations
-  projectLikes     ProjectLike[]
-  projectFavorites ProjectFavorite[]
-  projectComments  ProjectComment[]
-
-  // Friendship Relations
-  sentFriendships     Friendship[] @relation("sentFriendships")
-  receivedFriendships Friendship[] @relation("receivedFriendships")
+  id                    String            @id @default(cuid())
+  email                 String            @unique
+  password              String
+  name                  String
+  role                  String            @default("ALUNO")
+  avatar                String?
+  bio                   String?
+  school                String?
+  verified              Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  address               String?
+  inep                  String?
+  phone                 String?
+  zone                  String?
+  schoolId              String?
+  schoolType            String?
+  badgesGiven           Badge[]           @relation("badgeGiver")
+  badgesReceived        Badge[]           @relation("badgeReceiver")
+  comments              Comment[]
+  receivedFriendships   Friendship[]      @relation("receivedFriendships")
+  sentFriendships       Friendship[]      @relation("sentFriendships")
+  likes                 Like[]
+  moderationItems       ModerationItem[]
+  notificationsReceived Notification[]    @relation("recipientNotifications")
+  notificationsSent     Notification[]    @relation("senderNotifications")
+  posts                 Post[]
+  profileViews          ProfileView[]     @relation("profileOwner")
+  viewsObserved         ProfileView[]     @relation("viewer")
+  projects              Project[]
+  projectComments       ProjectComment[]
+  projectFavorites      ProjectFavorite[]
+  projectLikes          ProjectLike[]
+  testimonialsReceived  Testimonial[]     @relation("testimonialReceiver")
+  testimonialsSent      Testimonial[]     @relation("testimonialSender")
+  worksAt               User?             @relation("SchoolTeachers", fields: [schoolId], references: [id])
+  teachers              User[]            @relation("SchoolTeachers")
+  following             UserFollow[]      @relation("follower")
+  followers             UserFollow[]      @relation("following")
+  postsInSchool        Post[]            @relation("SchoolPosts")
 }
 
 model Notification {
   id          String   @id @default(cuid())
-  type        String   // 'FOLLOW', 'BADGE', 'TESTIMONIAL', 'POST_LIKE', 'POST_COMMENT'
+  type        String
   recipientId String
-  recipient   User     @relation("recipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
   senderId    String?
-  sender      User?    @relation("senderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
-  relatedId   String?  // ID do objeto relacionado (postId, testimonialId, etc.)
-  content     String?  // Texto opcional
+  relatedId   String?
+  content     String?
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
+  recipient   User     @relation("recipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender      User?    @relation("senderNotifications", fields: [senderId], references: [id])
 
   @@index([recipientId])
 }
 
 model UserFollow {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   followerId  String
-  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   followingId String
-  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
 }
 
 model Friendship {
-  id          String   @id @default(cuid())
-  senderId    String
-  sender      User     @relation("sentFriendships", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String
-  receiver    User     @relation("receivedFriendships", fields: [receiverId], references: [id], onDelete: Cascade)
-  status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  receiver   User     @relation("receivedFriendships", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("sentFriendships", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
 }
 
 model Post {
-  id        String     @id @default(cuid())
-  content   String
-  image     String?   // Deprecated, keeping for backward compatibility
-  images    String[]  // New: Support for multiple images (Gallery)
-  authorId  String
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags      String[]   @default([])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  // Relations
-  comments  Comment[]
-  likes     Like[]
+  id         String          @id @default(cuid())
+  content    String
+  image      String?
+  authorId   String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  images     String[]
+  tags       String[]        @default([])
+  comments   Comment[]
+  likes      Like[]
   moderation ModerationItem?
+  author     User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  schoolId   String?
+  school     User?           @relation("SchoolPosts", fields: [schoolId], references: [id])
 }
 
 model WeeklyEvent {
@@ -137,69 +120,64 @@ model Comment {
   id        String   @id @default(cuid())
   content   String
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Like {
   id        String   @id @default(cuid())
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   @default("LIKE") // LIKE, LOVE, CLAP, ROCKET, IDEA
   createdAt DateTime @default(now())
+  type      String   @default("LIKE")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
 }
 
 model ModerationItem {
-  id        String   @id @default(cuid())
-  postId    String   @unique
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  postId      String   @unique
   moderatorId String?
-  moderator User?    @relation(fields: [moderatorId], references: [id], onDelete: SetNull)
-  status    String   @default("PENDENTE") // PENDENTE, APROVADO, REPROVADO
-  reason    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      String   @default("PENDENTE")
+  reason      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  moderator   User?    @relation(fields: [moderatorId], references: [id])
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
-  description String   @db.Text // Short summary
-  content     String?  @db.Text // Rich HTML content
-  image       String?  // Cover image
-  images      String[] // Gallery
-  attachments String[] // Files/Media
-  
+  description String
+  image       String?
   authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  category    String   // Legacy or fallback
-  etapa       String?  // INFANTIL, ANOS_INICIAIS, ANOS_FINAIS, EJA
-  componente  String?  // Matemática, Português, etc.
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  likes       ProjectLike[]
-  favorites   ProjectFavorite[]
+  category    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  attachments String[]
+  componente  String?
+  content     String?
+  etapa       String?
+  images      String[]
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    ProjectComment[]
+  favorites   ProjectFavorite[]
+  likes       ProjectLike[]
 }
 
 model ProjectLike {
   id        String   @id @default(cuid())
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
 }
@@ -207,23 +185,23 @@ model ProjectLike {
 model ProjectFavorite {
   id        String   @id @default(cuid())
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
 }
 
 model ProjectComment {
   id        String   @id @default(cuid())
-  content   String   @db.Text
+  content   String
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model SystemSettings {
@@ -235,62 +213,61 @@ model SystemSettings {
 
 model BadgeType {
   id          String   @id @default(cuid())
-  name        String   @unique  // Ex: "Inovador", "Mestre"
-  icon        String            // Ex: "🚀", "⭐"
+  name        String   @unique
+  icon        String
   description String?
-  color       String   @default("#7C3AED") // Hex color
+  color       String   @default("#7C3AED")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   badges      Badge[]
 }
 
 model Badge {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   badgeTypeId String
-  badgeType   BadgeType @relation(fields: [badgeTypeId], references: [id], onDelete: Cascade)
   giverId     String
-  giver       User     @relation("badgeGiver", fields: [giverId], references: [id], onDelete: Cascade)
   receiverId  String
-  receiver    User     @relation("badgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  badgeType   BadgeType @relation(fields: [badgeTypeId], references: [id], onDelete: Cascade)
+  giver       User      @relation("badgeGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("badgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([giverId, receiverId, badgeTypeId])
 }
 
 model ProfileView {
-  id          String   @id @default(cuid())
-  viewerId    String
-  viewer      User     @relation("viewer", fields: [viewerId], references: [id], onDelete: Cascade)
-  profileId   String
-  owner       User     @relation("profileOwner", fields: [profileId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  viewerId  String
+  profileId String
+  createdAt DateTime @default(now())
+  owner     User     @relation("profileOwner", fields: [profileId], references: [id], onDelete: Cascade)
+  viewer    User     @relation("viewer", fields: [viewerId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
 }
 
 model Testimonial {
-  id          String   @id @default(cuid())
-  content     String
-  senderId    String
-  sender      User     @relation("testimonialSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String
-  receiver    User     @relation("testimonialReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  content    String
+  senderId   String
+  receiverId String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  receiver   User     @relation("testimonialReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("testimonialSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([receiverId])
 }
 
 model SupportItem {
   id        String   @id @default(cuid())
-  type      String   // 'FAQ' | 'TUTORIAL'
+  type      String
   title     String
-  content   String   @db.Text
-  link      String?  // Optional video link or external URL
-  order     Int      @default(0) // For sorting
+  content   String
+  link      String?
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

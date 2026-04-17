@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { IMAGES } from '../constants';
-import { authAPI, setAuthToken } from '../api';
+import { authAPI, setAuthToken, getMediaUrl } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
 
 const LoginPage: React.FC = () => {
@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
         <div className="relative z-10 flex flex-col justify-center px-24 text-white">
           <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl inline-block mb-10 w-fit">
             {settings.LOGO_URL ? (
-              <img src={settings.LOGO_URL} alt="Logo" className="h-12 w-auto object-contain brightness-0 invert" />
+              <img src={getMediaUrl(settings.LOGO_URL)} alt="Logo" className="h-12 w-auto object-contain brightness-0 invert" />
             ) : (
               <span className="material-symbols-outlined text-5xl font-fill-1">auto_awesome</span>
             )}
@@ -90,7 +90,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-10 text-primary">
             {settings.LOGO_URL ? (
-              <img src={settings.LOGO_URL} alt="Logo" className="h-10 w-auto object-contain" />
+              <img src={getMediaUrl(settings.LOGO_URL)} alt="Logo" className="h-10 w-auto object-contain" />
             ) : (
               <span className="material-symbols-outlined text-4xl font-fill-1">auto_awesome</span>
             )}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getMediaUrl } from '../api';
 
 interface ImageCarouselProps {
     images: string[];
@@ -23,7 +24,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         <div className="relative w-full aspect-square bg-black group overflow-hidden">
             <div
                 className="w-full h-full bg-contain bg-center bg-no-repeat transition-all duration-300"
-                style={{ backgroundImage: `url(${images[currentIndex]})` }}
+                style={{ backgroundImage: `url(${getMediaUrl(images[currentIndex])})` }}
             />
 
             {/* Navigation Arrows */}

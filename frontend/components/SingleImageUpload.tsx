@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { uploadAPI } from '../api';
+import { uploadAPI, getMediaUrl } from '../api';
 import { useModal } from '../contexts/ModalContext';
 
 interface SingleImageUploadProps {
@@ -39,7 +39,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({ imageUrl, 
             <div className="flex items-start gap-4">
                 <div
                     className="size-24 rounded-xl bg-gray-100 border dark:bg-gray-800 bg-contain bg-center bg-no-repeat shrink-0 shadow-sm"
-                    style={{ backgroundImage: imageUrl ? `url(${imageUrl})` : 'none' }}
+                    style={{ backgroundImage: imageUrl ? `url(${getMediaUrl(imageUrl)})` : 'none' }}
                 >
                     {!imageUrl && !loading && (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">

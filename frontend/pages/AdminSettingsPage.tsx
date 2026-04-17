@@ -47,7 +47,7 @@ const AdminSettingsPage: React.FC = () => {
         <div className="animate-fade-in">
             <h1 className="text-3xl font-bold mb-8">Configurações do Sistema</h1>
 
-            <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 p-8 rounded-2xl shadow-sm max-w-2xl">
+            <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 p-8 rounded-2xl shadow-sm w-full">
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div>
                         <label className="block text-sm font-bold mb-2 dark:text-gray-300">Nome da Aplicação</label>

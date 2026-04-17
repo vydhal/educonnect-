@@ -178,7 +178,7 @@ router.put('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
 });
 
 // Get user profile
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },

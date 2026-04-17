@@ -27,8 +27,23 @@ const port = parseInt(process.env.PORT || '5000', 10);
 // Prisma is initialized in ./prisma/client.js
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://172.20.160.1:3000',
+  'http://172.20.160.1:3001'
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('172.20.160.1')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // During dev, let's be flexible
+  },
   credentials: true
 }));
 app.use(express.json());

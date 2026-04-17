@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI, notificationsAPI, socialAPI } from '../api';
+import { authAPI, notificationsAPI, socialAPI, getMediaUrl } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
 import { IMAGES } from '../constants';
 import { BottomNavigation } from './BottomNavigation';
@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-primary cursor-pointer" onClick={() => navigate('/feed')}>
                             {settings.LOGO_URL ? (
-                                <img src={settings.LOGO_URL} alt="Logo" className="h-8 w-auto object-contain" />
+                                <img src={getMediaUrl(settings.LOGO_URL)} alt="Logo" className="h-8 w-auto object-contain" />
                             ) : (
                                 <span className="material-symbols-outlined text-3xl font-fill-1">auto_awesome</span>
                             )}
@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                             onClick={() => user?.id && navigate(`/profile/${user.id}`)}
                             title="Ver meu perfil público"
                             className="size-9 rounded-full bg-cover bg-center border border-gray-200 cursor-pointer hover:ring-2 ring-primary transition-all shrink-0"
-                            style={{ backgroundImage: `url(${user?.avatar || IMAGES.DEFAULT_AVATAR})` }}
+                            style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }}
                         />
 
                         {/* Mobile Search Toggle + Notifications */}
