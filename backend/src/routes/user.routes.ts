@@ -53,9 +53,7 @@ router.get('/', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: R
       });
     }
 
-    if (req.userId) {
-      and.push({ id: { not: req.userId } });
-    }
+    // Removed exclusion of current user so everyone is visible in the network
 
     const where = and.length > 0 ? { AND: and } : {};
 
@@ -85,7 +83,7 @@ router.get('/', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: R
         } : {})
       },
       take: 50,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { name: 'asc' }
     });
 
     const formattedUsers = users.map((u: any) => {
@@ -408,7 +406,8 @@ router.get('/search/:query', async (req: AuthenticatedRequest, res: Response) =>
         schoolId: true,
         verified: true
       },
-      take: 20
+      take: 20,
+      orderBy: { name: 'asc' }
     });
 
     res.json(users);

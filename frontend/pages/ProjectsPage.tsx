@@ -227,7 +227,7 @@ const ProjectsPage: React.FC = () => {
         </header>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-3xl border mb-10 space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-3xl border border-gray-100 dark:border-gray-800 mb-10 space-y-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1 w-full relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
@@ -282,7 +282,7 @@ const ProjectsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map(project => (
-              <div key={project.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border shadow-sm hover:shadow-2xl transition-all flex flex-col overflow-hidden group">
+              <div key={project.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl transition-all flex flex-col overflow-hidden group">
                 <div className="h-48 bg-gray-100 relative overflow-hidden">
                   {project.image ? (
                     <img src={project.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

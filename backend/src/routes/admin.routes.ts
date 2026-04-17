@@ -134,7 +134,7 @@ router.get('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedR
                 where,
                 skip,
                 take: limit,
-                orderBy: { createdAt: 'desc' },
+                orderBy: { name: 'asc' },
                 select: { 
                     id: true, 
                     name: true, 

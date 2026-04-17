@@ -237,12 +237,12 @@ const PublicProfilePage: React.FC = () => {
 
                 {/* Profile Info Sidebar */}
                 <aside className="md:w-80 shrink-0 space-y-6">
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
-                        {/* Background subtle gradient */}
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/10 to-transparent" />
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden pb-8 transition-all">
+                        {/* Profile Cover Gradient */}
+                        <div className="h-32 w-full bg-gradient-to-r from-[#15803d] to-[#1d4ed8]" />
 
-                        <div className="relative z-10">
-                            <div className="size-32 rounded-3xl border-4 border-white dark:border-gray-800 shadow-xl mx-auto bg-cover bg-center mb-6"
+                        <div className="px-8 relative z-10 -mt-16">
+                            <div className="size-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl mx-auto bg-cover bg-center mb-6 ring-4 ring-black/5 bg-white dark:bg-gray-900"
                                  style={{ backgroundImage: `url(${getMediaUrl(profileUser?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
 
                             <h1 className="text-2xl font-black dark:text-white mb-2">{profileUser?.name}</h1>
@@ -345,7 +345,7 @@ const PublicProfilePage: React.FC = () => {
                                     )}
 
                                     <div className="pt-4">
-                                        <p className="text-xs font-bold text-gray-400 uppercase text-left mb-4">Reconhecer este Perfil</p>
+                                        <p className="text-xs font-bold text-gray-400 uppercase text-center mb-4">Reconhecer este Perfil</p>
                                         <div className="flex flex-wrap justify-center gap-3">
                                             {badgeTypes.map(type => {
                                                 const isGiven = badges.find(b => b.typeId === type.id && b.isGivenByMe);
@@ -515,7 +515,7 @@ const PublicProfilePage: React.FC = () => {
                                 <div className="space-y-6">
                                     <h3 className="font-black text-xl dark:text-white">Relatos da Comunidade</h3>
                                     {testimonials.length === 0 ? (
-                                        <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border text-gray-400 italic">
+                                        <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 text-gray-400 italic">
                                             Nenhum depoimento exibido ainda. Por que não ser o primeiro?
                                         </div>
                                     ) : (
@@ -540,7 +540,7 @@ const PublicProfilePage: React.FC = () => {
                         )}
 
                         {activeTab === 'projetos' && (
-                            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border text-gray-400">
+                                <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 text-gray-400 italic">
                                 Projetos da instituição estarão disponíveis em breve nesta visualização.
                             </div>
                         )}
@@ -569,7 +569,7 @@ const BadgeIcon: React.FC<{ icon: string, label: string, color: string, isActive
                 </div>
             )}
         </div>
-        <span className={`text-[9px] font-black uppercase tracking-tighter truncate w-14 text-center ${isActive ? 'text-primary' : 'text-gray-400'}`}>{label}</span>
+        <span className={`text-[9px] font-black uppercase tracking-tighter text-center leading-tight px-1 ${isActive ? 'text-primary' : 'text-gray-400'}`}>{label}</span>
     </button>
 );
 

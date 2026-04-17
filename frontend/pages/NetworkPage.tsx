@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
-import { usersAPI } from '../api';
+import { usersAPI, getMediaUrl } from '../api';
+import { IMAGES } from '../constants';
 
 interface SchoolUser {
   id: string;
@@ -36,33 +37,41 @@ const NetworkPage: React.FC = () => {
         // Fetch list of schools for dropdown if not already fetched
         if (schoolsList.length === 0) {
           const allSchools = await usersAPI.getUsers('ESCOLA');
-          setSchoolsList(allSchools);
+          setSchoolsList([...allSchools].sort((a, b) => a.name.localeCompare(b.name)));
         }
 
         if (filterType === 'USUARIOS') {
           // Fetch non-school users
           data = await usersAPI.getUsers({
             category: 'USUARIOS',
-            search: search.length >= 3 ? search : undefined
+            search: search.length >= 3 ? search : undefined,
+            schoolId: selectedUnit || undefined
           });
         } else if (filterType === 'CRECHE') {
           data = await usersAPI.getUsers({
             category: 'CRECHES',
-            search: search.length >= 3 ? search : undefined
+            search: search.length >= 3 ? search : undefined,
+            schoolId: selectedUnit || undefined
           });
         } else if (filterType === 'ESCOLA') {
           data = await usersAPI.getUsers({
             category: 'ESCOLAS',
-            search: search.length >= 3 ? search : undefined
+            search: search.length >= 3 ? search : undefined,
+            schoolId: selectedUnit || undefined
           });
         } else {
           // TODAS -> Get balanced mix or search all
           data = await usersAPI.getUsers({
-            search: search.length >= 3 ? search : undefined
+            search: search.length >= 3 ? search : undefined,
+            schoolId: selectedUnit || undefined
           });
         }
 
-        setItems(data);
+        setItems([...data].sort((a, b) => {
+          const nameA = (a.name || '').trim().toLowerCase();
+          const nameB = (b.name || '').trim().toLowerCase();
+          return nameA.localeCompare(nameB);
+        }));
         
         // Initialize following state from data
         const followingIds = new Set<string>();
@@ -167,7 +176,7 @@ const NetworkPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters - HIDDEN ON MOBILE */}
           <aside className="hidden lg:block lg:col-span-1 space-y-4">
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border sticky top-24">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 sticky top-24">
               <h3 className="font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">tune</span>
                 Filtros
@@ -218,18 +227,19 @@ const NetworkPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {items.map(item => (
-                  <div key={item.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all group">
+                  <div key={item.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all group">
                     <div className="flex items-start justify-between mb-4">
                       <div
                         onClick={() => navigate(`/profile/${item.id}`)}
-                        className="size-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all overflow-hidden relative cursor-pointer"
+                        className="size-16 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all overflow-hidden relative cursor-pointer shadow-xl border-4 border-white dark:border-gray-800 ring-4 ring-black/5"
                       >
-                        {item.avatar ? (
-                          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${item.avatar})` }} />
+                        {item.role === 'ESCOLA' && !item.avatar ? (
+                          <span className="material-symbols-outlined text-4xl">corporate_fare</span>
                         ) : (
-                          <span className="material-symbols-outlined text-4xl">
-                            {item.role === 'PROFESSOR' ? 'person' : 'corporate_fare'}
-                          </span>
+                          <div 
+                            className="absolute inset-0 bg-cover bg-center" 
+                            style={{ backgroundImage: `url(${getMediaUrl(item.avatar) || IMAGES.DEFAULT_AVATAR})` }} 
+                          />
                         )}
                       </div>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${

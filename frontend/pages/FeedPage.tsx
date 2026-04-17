@@ -76,7 +76,7 @@ const SchoolSuggest: React.FC<{ id: string, name: string, type: string, avatar?:
         className="flex items-center gap-3 min-w-0 cursor-pointer group flex-1"
       >
         <div
-          className="size-10 bg-gray-100 rounded-xl shrink-0 bg-cover bg-center border border-gray-100 group-hover:ring-2 ring-primary transition-all duration-300"
+          className="size-10 bg-white dark:bg-gray-900 rounded-full shrink-0 bg-cover bg-center border border-gray-100 dark:border-gray-800 group-hover:ring-4 ring-primary transition-all duration-300 shadow-sm"
           style={{ backgroundImage: `url(${getMediaUrl(avatar) || IMAGES.DEFAULT_AVATAR})` }}
         />
         <div className="min-w-0 flex-1">
@@ -428,11 +428,12 @@ const FeedPage: React.FC = () => {
 
       <main className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-6 pb-24 md:pb-8">
         {/* Left Sidebar - Hidden on mobile */}
-        <aside className="hidden lg:block lg:col-span-3 space-y-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden sticky top-20">
+        <aside className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-20 space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <div className="h-16 bg-gradient-to-r from-primary to-blue-400"></div>
             <div className="px-4 pb-4 -mt-8 flex flex-col items-center">
-              <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
+              <div className="size-20 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-900 bg-cover bg-center shadow-xl ring-4 ring-black/5 mb-3" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
               <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
               
@@ -465,8 +466,8 @@ const FeedPage: React.FC = () => {
             </div>
           </div>
 
-          {user && (
-            <div className="space-y-4 sticky top-[340px]">
+            {user && (
+              <div className="space-y-4">
               <div className="bg-white dark:bg-gray-900 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
                 <h3 className="font-bold text-xs mb-4 flex items-center gap-2 text-gray-400 uppercase tracking-wider">
                   <span className="material-symbols-outlined text-sm text-primary">visibility</span>
@@ -479,7 +480,7 @@ const FeedPage: React.FC = () => {
                         key={visitor.id}
                         title={visitor.name}
                         onClick={() => navigate(`/profile/${visitor.id}`)}
-                        className="size-10 rounded-xl bg-cover bg-center border border-gray-100 dark:border-gray-700 cursor-pointer hover:ring-2 ring-primary transition-all shadow-sm"
+                        className="size-10 rounded-full bg-cover bg-center border border-gray-100 dark:border-gray-800 cursor-pointer hover:ring-4 ring-primary/20 transition-all shadow-sm bg-white dark:bg-gray-900"
                         style={{ backgroundImage: `url(${getMediaUrl(visitor.avatar) || IMAGES.DEFAULT_AVATAR})` }}
                       />
                     ))}
@@ -514,7 +515,8 @@ const FeedPage: React.FC = () => {
               </div>
             </div>
           )}
-        </aside>
+        </div>
+      </aside>
 
         {/* Feed */}
         <div className="lg:col-span-6 space-y-4">
@@ -544,7 +546,7 @@ const FeedPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-xl p-4 md:p-5 shadow-sm border dark:border-gray-800">
             <div className="flex gap-4 items-center">
-              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
+              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-md border-2 border-white dark:border-gray-800 ring-2 ring-black/5 bg-white dark:bg-gray-900" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex-1 text-left bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-2xl px-5 py-3.5 text-xs md:text-sm font-medium transition-all border border-gray-100 dark:border-gray-700 shadow-inner"
@@ -565,7 +567,7 @@ const FeedPage: React.FC = () => {
                   <div className="flex gap-3">
                     <div
                       onClick={() => navigate(`/profile/${post.authorId}`)}
-                      className="size-12 rounded-full bg-cover bg-center shrink-0 border cursor-pointer hover:ring-2 ring-primary transition-all"
+                      className="size-12 rounded-full bg-cover bg-center shrink-0 border-2 border-white dark:border-gray-800 cursor-pointer hover:ring-4 ring-primary transition-all shadow-md bg-white dark:bg-gray-900 ring-2 ring-black/5"
                       style={{ backgroundImage: `url(${getMediaUrl(post.authorAvatar)})` }}
                     />
                     <div>
