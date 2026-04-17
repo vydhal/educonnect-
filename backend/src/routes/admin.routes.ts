@@ -144,16 +144,24 @@ router.get('/users', authMiddleware, adminMiddleware, async (req: AuthenticatedR
                     schoolId: true,
                     createdAt: true, 
                     avatar: true,
-                    worksAt: { select: { name: true } }
+                    worksAt: { select: { name: true } },
+                    memberOfSchools: { select: { id: true, name: true } }
                 }
             }),
             prisma.user.count({ where })
         ]);
 
-        const users = usersRaw.map(u => ({
-            ...u,
-            school: u.worksAt?.name || u.school
-        }));
+        const users = usersRaw.map(u => {
+            // Join all member schools names if they exist, otherwise fallback to primary school
+            const multiSchools = u.memberOfSchools && u.memberOfSchools.length > 0 
+                ? u.memberOfSchools.map(s => s.name).join(', ')
+                : null;
+
+            return {
+                ...u,
+                school: multiSchools || u.worksAt?.name || u.school
+            };
+        });
 
         res.json({ users, total, page, totalPages: Math.ceil(total / limit) });
     } catch (error) {

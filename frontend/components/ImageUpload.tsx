@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { uploadAPI } from '../api';
+import { uploadAPI, getMediaUrl } from '../api';
 
 interface ImageUploadProps {
     currentImage?: string;
@@ -41,8 +41,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ currentImage, onImageU
         <div className={`flex flex-col gap-2 ${className}`}>
             <div className="flex items-center gap-4">
                 <div
-                    className="size-16 rounded-full bg-cover bg-center border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
-                    style={{ backgroundImage: currentImage ? `url(${currentImage})` : 'none' }}
+                    className="size-16 shrink-0 aspect-square rounded-full bg-cover bg-center border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden"
+                    style={{ backgroundImage: currentImage ? `url(${getMediaUrl(currentImage)})` : 'none' }}
                 >
                     {!currentImage && !loading && (
                         <span className="material-symbols-outlined text-gray-400">image</span>

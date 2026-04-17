@@ -96,6 +96,17 @@ export const authAPI = {
     method: 'PUT',
     body: JSON.stringify(data)
   }),
+  // External Portal Auth
+  externalLogin: (data: { email: string; password: string }) => 
+    request('/auth/external/login', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  validateSSO: (token: string) => 
+    request('/auth/external/sso', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    }),
 };
 
 // Posts API

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../api';
+import { authAPI, supportAPI, getMediaUrl } from '../api';
 import { Header } from '../components/Header';
 import { useSettings } from '../contexts/SettingsContext';
 import { ImageUpload } from '../components/ImageUpload';
-import { supportAPI } from '../api';
+import { IMAGES } from '../constants';
 
 const ProfileSettingsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -91,9 +91,26 @@ const ProfileSettingsPage: React.FC = () => {
                         <div className="bg-white dark:bg-gray-900 rounded-[32px] shadow-sm border dark:border-gray-800 overflow-hidden sticky top-24 border-gray-100">
                             {/* Profile Header - HIDDEN ON MOBILE */}
                             <div className="hidden lg:flex p-8 border-b dark:border-gray-800 flex-col items-center">
-                                <div className="size-24 rounded-[32px] border-4 border-gray-50 dark:border-gray-800 bg-cover bg-center mb-4 shadow-lg" style={{ backgroundImage: `url(${user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=random`})` }} />
+                                <div className="size-24 rounded-[32px] border-4 border-gray-50 dark:border-gray-800 bg-cover bg-center mb-4 shadow-lg" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
                                 <h2 className="font-black text-lg text-center dark:text-white uppercase tracking-tight">{user?.name}</h2>
-                                <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">{user?.role}</p>
+                                <div className="mt-2 flex flex-col items-center gap-1 w-full">
+                                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">{user?.role}</p>
+                                    
+                                    {user?.schools && user.schools.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap justify-center gap-1 px-4">
+                                            {user.schools.slice(0, 3).map((s: any) => (
+                                                <span key={s.id} className="text-[9px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                                                    {s.name}
+                                                </span>
+                                            ))}
+                                            {user.schools.length > 3 && (
+                                                <span className="text-[9px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-dashed border-gray-200">
+                                                    +{user.schools.length - 3}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             
                             {/* Navigation */}

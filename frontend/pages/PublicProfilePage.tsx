@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
-import { usersAPI, socialAPI, authAPI, projectsAPI, badgeTypesAPI } from '../api';
+import { usersAPI, socialAPI, authAPI, projectsAPI, badgeTypesAPI, getMediaUrl } from '../api';
 import { useModal } from '../contexts/ModalContext';
 import { IMAGES } from '../constants';
 
@@ -243,14 +243,32 @@ const PublicProfilePage: React.FC = () => {
 
                         <div className="relative z-10">
                             <div className="size-32 rounded-3xl border-4 border-white dark:border-gray-800 shadow-xl mx-auto bg-cover bg-center mb-6"
-                                 style={{ backgroundImage: `url(${profileUser?.avatar || IMAGES.DEFAULT_AVATAR})` }} />
+                                 style={{ backgroundImage: `url(${getMediaUrl(profileUser?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
 
                             <h1 className="text-2xl font-black dark:text-white mb-2">{profileUser?.name}</h1>
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider mb-4 inline-block">
-                                {profileUser?.role}
+                                {profileUser?.role === 'ESCOLA' ? 'Unidade Educacional' : profileUser?.role}
                             </span>
 
-                            <p className="text-sm text-gray-500 mb-6">{profileUser?.bio || 'Sem biografia definida.'}</p>
+                            {/* Multiple Schools Support */}
+                            {profileUser?.schools && profileUser.schools.length > 0 ? (
+                                <div className="mb-6">
+                                     <div className="flex flex-wrap justify-center gap-1.5">
+                                        {profileUser.schools.slice(0, 3).map((s: any) => (
+                                            <span key={s.id} className="text-[10px] font-bold text-gray-700 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg">
+                                                {s.name}
+                                            </span>
+                                        ))}
+                                        {profileUser.schools.length > 3 && (
+                                            <span className="text-[10px] font-black text-primary bg-primary/5 border border-primary/20 px-2.5 py-1 rounded-lg">
+                                                +{profileUser.schools.length - 3} unidades
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : profileUser?.school && (
+                                <p className="text-sm text-primary font-bold mb-6">{profileUser.school}</p>
+                            )}
 
                             <div className="flex justify-center gap-6 py-4 border-y dark:border-gray-800 mb-6 font-bold">
                                 {profileUser?.role === 'ESCOLA' ? (
@@ -370,7 +388,7 @@ const PublicProfilePage: React.FC = () => {
                                         title={visitor.name}
                                         onClick={() => navigate(`/profile/${visitor.id}`)}
                                         className="size-10 rounded-xl bg-cover bg-center cursor-pointer hover:brightness-90 transition-all border border-gray-100 shadow-sm"
-                                        style={{ backgroundImage: `url(${visitor.avatar || `https://ui-avatars.com/api/?name=${visitor.name}&background=random`})` }}
+                                        style={{ backgroundImage: `url(${visitor.avatar || IMAGES.DEFAULT_AVATAR})` }}
                                     />
                                 ))}
                             </div>
@@ -476,7 +494,7 @@ const PublicProfilePage: React.FC = () => {
                                                 {pendingTestimonials.map(testi => (
                                                     <div key={testi.id} className="bg-yellow-50 dark:bg-yellow-900/10 p-6 rounded-3xl border border-yellow-200 dark:border-yellow-800 transition-all hover:shadow-md">
                                                         <div className="flex items-center gap-3 mb-4">
-                                                            <div className="size-10 rounded-xl bg-cover bg-center" style={{ backgroundImage: `url(${testi.sender.avatar || `https://ui-avatars.com/api/?name=${testi.sender.name}`})` }} />
+                                                            <div className="size-10 rounded-xl bg-cover bg-center" style={{ backgroundImage: `url(${testi.sender.avatar || IMAGES.DEFAULT_AVATAR})` }} />
                                                             <div>
                                                                 <p className="text-sm font-bold dark:text-white">{testi.sender.name}</p>
                                                                 <p className="text-[10px] text-gray-500">Enviado em {new Date(testi.createdAt).toLocaleDateString()}</p>
@@ -506,7 +524,7 @@ const PublicProfilePage: React.FC = () => {
                                                 <div key={testi.id} className="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative">
                                                     <span className="material-symbols-outlined absolute top-6 right-8 text-4xl text-primary/5 select-none">format_quote</span>
                                                     <div className="flex items-center gap-4 mb-6">
-                                                        <div className="size-12 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${testi.sender.avatar || `https://ui-avatars.com/api/?name=${testi.sender.name}`})` }} />
+                                                        <div className="size-12 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${testi.sender.avatar || IMAGES.DEFAULT_AVATAR})` }} />
                                                         <div>
                                                             <h4 className="font-bold dark:text-white">{testi.sender.name}</h4>
                                                             <p className="text-xs text-gray-500">{new Date(testi.createdAt).toLocaleDateString()}</p>

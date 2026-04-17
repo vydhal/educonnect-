@@ -46,6 +46,11 @@ model User {
   testimonialsSent      Testimonial[]     @relation("testimonialSender")
   worksAt               User?             @relation("SchoolTeachers", fields: [schoolId], references: [id])
   teachers              User[]            @relation("SchoolTeachers")
+  
+  // Many-to-Many relationship for multiple school assignments (e.g. Teachers working in multiple units)
+  memberOfSchools       User[]            @relation("UserSchoolAssociation")
+  schoolMembers         User[]            @relation("UserSchoolAssociation")
+
   following             UserFollow[]      @relation("follower")
   followers             UserFollow[]      @relation("following")
   postsInSchool        Post[]            @relation("SchoolPosts")

@@ -39,23 +39,20 @@ const NetworkPage: React.FC = () => {
           setSchoolsList(allSchools);
         }
 
-        if (filterType === 'PROFESSOR') {
-          // Fetch teachers
+        if (filterType === 'USUARIOS') {
+          // Fetch non-school users
           data = await usersAPI.getUsers({
-            role: 'PROFESSOR',
-            schoolId: selectedUnit || undefined,
+            category: 'USUARIOS',
             search: search.length >= 3 ? search : undefined
           });
         } else if (filterType === 'CRECHE') {
           data = await usersAPI.getUsers({
-            role: 'ESCOLA',
-            schoolType: 'CRECHE',
+            category: 'CRECHES',
             search: search.length >= 3 ? search : undefined
           });
         } else if (filterType === 'ESCOLA') {
           data = await usersAPI.getUsers({
-            role: 'ESCOLA',
-            schoolType: 'ESCOLA',
+            category: 'ESCOLAS',
             search: search.length >= 3 ? search : undefined
           });
         } else {
@@ -151,10 +148,10 @@ const NetworkPage: React.FC = () => {
         {/* Mobile Filter Tabs */}
         <div className="lg:hidden flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2 mb-4">
           {[
-            { label: 'Todas', value: 'TODAS', icon: 'apps' },
+            { label: 'Toda a Rede', value: 'TODAS', icon: 'apps' },
             { label: 'Escolas', value: 'ESCOLA', icon: 'corporate_fare' },
-            { label: 'Creches/CMEI', value: 'CRECHE', icon: 'child_care' },
-            { label: 'Professores', value: 'PROFESSOR', icon: 'person' }
+            { label: 'Creches', value: 'CRECHE', icon: 'child_care' },
+            { label: 'Usuários', value: 'USUARIOS', icon: 'person' }
           ].map(opt => (
             <button
               key={opt.value}
@@ -177,10 +174,10 @@ const NetworkPage: React.FC = () => {
               </h3>
               <div className="space-y-2">
                 {[
-                  { label: 'Todas as Unidades', value: 'TODAS' },
+                  { label: 'Toda a Rede', value: 'TODAS' },
                   { label: 'Escolas Municipais', value: 'ESCOLA' },
                   { label: 'Creches e CMEIs', value: 'CRECHE' },
-                  { label: 'Professores', value: 'PROFESSOR' }
+                  { label: 'Usuários da Rede', value: 'USUARIOS' }
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -216,7 +213,7 @@ const NetworkPage: React.FC = () => {
               <div className="flex justify-center p-12"><span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span></div>
             ) : items.length === 0 ? (
               <div className="text-center p-12 text-gray-500 bg-white dark:bg-gray-900 rounded-2xl border">
-                {filterType === 'PROFESSOR' ? 'Nenhum professor encontrado.' : 'Nenhuma unidade ou usuário encontrado.'}
+                {filterType === 'USUARIOS' ? 'Nenhum usuário encontrado.' : 'Nenhuma unidade ou usuário encontrado.'}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -235,9 +232,9 @@ const NetworkPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.role === 'PROFESSOR' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.role !== 'ESCOLA' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
                         }`}>
-                        {item.role === 'PROFESSOR' ? 'PROFESSOR' : (item.schoolType || 'ESCOLA')}
+                        {item.role === 'ESCOLA' ? (item.schoolType || 'UNIDADE') : item.role}
                       </span>
                     </div>
                     <h3

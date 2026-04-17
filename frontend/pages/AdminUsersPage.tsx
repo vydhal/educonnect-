@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI } from '../api';
+import { adminAPI, getMediaUrl } from '../api';
 import { User, UserRole } from '../types';
 import { useModal } from '../contexts/ModalContext';
+import { IMAGES } from '../constants';
 
 interface AdminUser extends User {
     school?: string;
@@ -191,7 +192,7 @@ const AdminUsersPage: React.FC = () => {
                                 <td className="p-5">
                                     <div className="flex items-center gap-4">
                                         <img
-                                            src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                                            src={getMediaUrl(user.avatar) || IMAGES.DEFAULT_AVATAR}
                                             className="size-10 rounded-full object-cover border-2 border-white shadow-sm"
                                             alt=""
                                         />

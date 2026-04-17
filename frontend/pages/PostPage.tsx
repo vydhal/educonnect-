@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post } from '../types';
-import { postsAPI, authAPI, socialAPI } from '../api';
+import { postsAPI, authAPI, socialAPI, getMediaUrl } from '../api';
 import { Header } from '../components/Header';
 import { ReactionButton } from '../components/ReactionButton';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { useModal } from '../contexts/ModalContext';
 import { RichCommentInput } from '../components/RichCommentInput';
+import { IMAGES } from '../constants';
 
 const PostPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ const PostPage: React.FC = () => {
         author: apiPost.author.name,
         authorId: apiPost.author.id,
         authorTitle: apiPost.author.school || (apiPost.author.role === 'ESCOLA' ? 'Instituição' : 'Educador'),
-        authorAvatar: apiPost.author.avatar || `https://ui-avatars.com/api/?name=${apiPost.author.name}&background=random`,
+        authorAvatar: getMediaUrl(apiPost.author.avatar) || IMAGES.DEFAULT_AVATAR,
         content: apiPost.content,
         timestamp: timeAgo(apiPost.createdAt),
         likes: apiPost.likes,
@@ -220,7 +221,7 @@ const PostPage: React.FC = () => {
                                         <div 
                                           onClick={() => navigate(`/profile/${comment.author.id}`)}
                                           className="size-10 rounded-xl bg-gray-200 shrink-0 bg-cover bg-center cursor-pointer hover:ring-2 ring-primary transition-all" 
-                                          style={{ backgroundImage: `url(${comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.name}&background=random`})` }} 
+                                          style={{ backgroundImage: `url(${comment.author.avatar || IMAGES.DEFAULT_AVATAR})` }} 
                                         />
                                         <div className="bg-gray-100 dark:bg-gray-800/60 p-4 rounded-3xl rounded-tl-none text-sm w-full">
                                             <div className="flex justify-between items-center mb-1">

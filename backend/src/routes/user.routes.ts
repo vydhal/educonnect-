@@ -10,31 +10,54 @@ const router = Router();
 // Get all users (Network suggestions)
 router.get('/', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { role, schoolType, schoolId, search } = req.query;
-    const where: any = {};
+    const { role, schoolType, schoolId, search, category } = req.query;
+    const and: any[] = [];
 
-    if (role && role !== 'TODAS') {
-      where.role = (role as string).toUpperCase();
+    if (category === 'ESCOLAS') {
+      and.push({ role: 'ESCOLA' });
+      and.push({
+        OR: [
+          { name: { startsWith: 'EMEF', mode: 'insensitive' } },
+          { name: { startsWith: 'EMEIF', mode: 'insensitive' } },
+          { name: { startsWith: 'CEAI', mode: 'insensitive' } }
+        ]
+      });
+    } else if (category === 'CRECHES') {
+      and.push({ role: 'ESCOLA' });
+      and.push({
+        OR: [
+          { name: { startsWith: 'CM', mode: 'insensitive' } },
+          { name: { startsWith: 'CASA DA CRIANÇA', mode: 'insensitive' } }
+        ]
+      });
+    } else if (category === 'USUARIOS') {
+      and.push({ role: { not: 'ESCOLA' } });
+    } else if (role && role !== 'TODAS') {
+      and.push({ role: (role as string).toUpperCase() });
     }
 
-    if (schoolType) {
-      where.schoolType = schoolType;
+    if (schoolType && !category) {
+      and.push({ schoolType });
     }
 
     if (schoolId) {
-      where.schoolId = schoolId;
+      and.push({ schoolId });
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { school: { contains: search as string, mode: 'insensitive' } }
-      ];
+      and.push({
+        OR: [
+          { name: { contains: search as string, mode: 'insensitive' } },
+          { school: { contains: search as string, mode: 'insensitive' } }
+        ]
+      });
     }
 
     if (req.userId) {
-      where.id = { not: req.userId };
+      and.push({ id: { not: req.userId } });
     }
+
+    const where = and.length > 0 ? { AND: and } : {};
 
     const currentUserId = req.userId;
     console.log('GET /users: currentUserId identified as:', currentUserId);
@@ -191,6 +214,7 @@ router.get('/:id', optionalAuthMiddleware, async (req: AuthenticatedRequest, res
         bio: true,
         school: true,
         verified: true,
+        memberOfSchools: { select: { id: true, name: true } },
         _count: {
           select: { followers: true, following: true, posts: true, projects: true }
         }
@@ -201,43 +225,50 @@ router.get('/:id', optionalAuthMiddleware, async (req: AuthenticatedRequest, res
       throw new AppError('User not found', 404);
     }
 
+    // Check if current user is following this profile
     let isFollowing = false;
     let friendship = null;
 
     if (req.userId) {
-      // Check follow (for units)
-      const follow = await prisma.userFollow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: req.userId,
-            followingId: req.params.id
-          }
-        }
-      });
-      isFollowing = !!follow;
+        const follow = await prisma.userFollow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: req.userId,
+                    followingId: req.params.id
+                }
+            }
+        });
+        isFollowing = !!follow;
 
-      // Check friendship (for users)
-      friendship = await prisma.friendship.findFirst({
-        where: {
-          OR: [
-            { senderId: req.userId, receiverId: req.params.id },
-            { senderId: req.params.id, receiverId: req.userId }
-          ]
-        }
-      });
+        // Check friendship status
+        friendship = await prisma.friendship.findFirst({
+            where: {
+                OR: [
+                    { senderId: req.userId, receiverId: req.params.id },
+                    { senderId: req.params.id, receiverId: req.userId }
+                ]
+            }
+        });
     }
 
+    // Friend count
     const friendsCount = await prisma.friendship.count({
-      where: {
-        status: 'ACCEPTED',
-        OR: [
-          { senderId: req.params.id },
-          { receiverId: req.params.id }
-        ]
-      }
+        where: {
+            status: 'ACCEPTED',
+            OR: [
+                { senderId: req.params.id },
+                { receiverId: req.params.id }
+            ]
+        }
     });
 
-    res.json({ ...user, isFollowing, friendship, friendsCount });
+    res.json({
+      ...user,
+      schools: user.memberOfSchools,
+      isFollowing,
+      friendship,
+      friendsCount
+    });
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ error: error.message });

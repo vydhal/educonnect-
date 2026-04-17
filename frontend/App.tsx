@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import ProfileSelectionPage from './pages/ProfileSelectionPage';
@@ -33,8 +33,9 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-gray-100">
           <Routes>
             <Route path="/" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/external" element={<LoginPage />} />
             <Route path="/about" element={<LandingPage />} />
-            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/profile-selection" element={<ProfileSelectionPage />} />
             <Route path="/register/:role" element={<RegistrationPage />} />

@@ -43,6 +43,7 @@ export interface User {
   role: UserRole;
   avatar?: string;
   school?: string;
+  schools?: { id: string, name: string }[];
   schoolId?: string;
   createdAt?: string;
 }

@@ -27,12 +27,19 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     // Extract hashtags
     const tags = content ? (content.match(/#[\w\u00C0-\u00FF]+/g) || []).map((tag: string) => tag.substring(1)) : [];
 
+    // Fetch author to get schoolId
+    const author = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { schoolId: true }
+    });
+
     const post = await prisma.post.create({
       data: {
         content: content || '', // Allow empty content if there are images
         image: imageList.length > 0 ? imageList[0] : null, // Backward compatibility
         images: imageList,
         authorId: req.userId,
+        schoolId: author?.schoolId,
         tags
       },
       include: {

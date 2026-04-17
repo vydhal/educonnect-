@@ -7,8 +7,15 @@ import { useSettings } from '../contexts/SettingsContext';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const redirectPath = searchParams.get('redirect');
+  
+  // Robust token/redirect capture (checking both React Router state and URL bar)
+  const getParam = (name: string) => {
+    return new URLSearchParams(location.search).get(name) || 
+           new URLSearchParams(window.location.search).get(name);
+  };
+
+  const redirectPath = getParam('redirect');
+  const tokenFromUrl = getParam('token');
 
   const { settings } = useSettings();
   const [email, setEmail] = useState('');
@@ -17,14 +24,36 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Auto-login redirect if token exists
+  // Handle SSO Token from URL
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const target = redirectPath || '/feed';
-      navigate(target, { replace: true });
+    if (tokenFromUrl) {
+      handleSSOLogin(tokenFromUrl);
+    } else {
+      // Auto-login redirect if existing token exists
+      const localToken = localStorage.getItem('token');
+      if (localToken) {
+        const target = redirectPath || '/feed';
+        navigate(target, { replace: true });
+      }
     }
-  }, [navigate, redirectPath]);
+  }, [navigate, redirectPath, tokenFromUrl]);
+
+  const handleSSOLogin = async (ssoToken: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await authAPI.validateSSO(ssoToken);
+      if (response.token && response.user) {
+        setAuthToken(response.token);
+        const userRole = response.user?.role?.toUpperCase();
+        navigate(userRole === 'ADMIN' ? '/admin' : (redirectPath || '/feed'));
+      }
+    } catch (err: any) {
+      setError('Falha na autenticação via Portal: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +206,28 @@ const LoginPage: React.FC = () => {
             >
               {loading ? 'Conectando...' : 'Entrar'}
               {!loading && <span className="material-symbols-outlined">arrow_forward</span>}
+            </button>
+
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100 dark:border-gray-800"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-950 px-2 text-gray-500 font-bold tracking-widest">Ou acesse com</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                const portalUrl = import.meta.env.VITE_PORTAL_URL || 'https://portaleducampina.com.br';
+                window.location.href = `${portalUrl}/login/external?redirect=${window.location.origin}/login`;
+              }}
+              className="w-full h-14 bg-white dark:bg-gray-900 border-2 border-primary/20 hover:border-primary/50 text-primary font-bold rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined font-fill-1 text-2xl">account_balance</span>
+              Entrar com Portal Educampina
             </button>
           </form>
 

@@ -182,7 +182,7 @@ const FeedPage: React.FC = () => {
     author: apiPost.author.name,
     authorId: apiPost.author.id,
     authorTitle: apiPost.author.school || (apiPost.author.role === 'ESCOLA' ? 'Instituição' : 'Educador'),
-    authorAvatar: apiPost.author.avatar || IMAGES.DEFAULT_AVATAR,
+    authorAvatar: getMediaUrl(apiPost.author.avatar) || IMAGES.DEFAULT_AVATAR,
     content: apiPost.content,
     timestamp: timeAgo(apiPost.createdAt),
     likes: apiPost.likes,
@@ -435,7 +435,27 @@ const FeedPage: React.FC = () => {
               <div className="size-20 rounded-full border-4 border-white dark:border-gray-900 bg-white bg-cover bg-center shadow-md mb-3" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
               <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
-              {user?.school && <p className="text-xs font-bold text-primary mt-1 text-center">{user.school}</p>}
+              
+              {/* Refined School Display for Multiple Units */}
+              {user?.schools && user.schools.length > 0 ? (
+                <div className="mt-2 text-center">
+                  <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Unidades Vinculadas</p>
+                  <div className="flex flex-wrap justify-center gap-1 px-4">
+                    {user.schools.slice(0, 3).map((s: any) => (
+                      <span key={s.id} className="text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                        {s.name}
+                      </span>
+                    ))}
+                    {user.schools.length > 3 && (
+                      <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-dashed border-gray-200">
+                        +{user.schools.length - 3} unidades
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : user?.school && (
+                <p className="text-xs font-bold text-primary mt-1 text-center">{user.school}</p>
+              )}
               <button
                 onClick={() => navigate(`/profile/${user?.id}`)}
                 className="mt-4 w-full py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20"
@@ -460,7 +480,7 @@ const FeedPage: React.FC = () => {
                         title={visitor.name}
                         onClick={() => navigate(`/profile/${visitor.id}`)}
                         className="size-10 rounded-xl bg-cover bg-center border border-gray-100 dark:border-gray-700 cursor-pointer hover:ring-2 ring-primary transition-all shadow-sm"
-                        style={{ backgroundImage: `url(${getMediaUrl(visitor.avatar) || `https://ui-avatars.com/api/?name=${visitor.name}&background=random`})` }}
+                        style={{ backgroundImage: `url(${getMediaUrl(visitor.avatar) || IMAGES.DEFAULT_AVATAR})` }}
                       />
                     ))}
                   </div>
@@ -524,7 +544,7 @@ const FeedPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-xl p-4 md:p-5 shadow-sm border dark:border-gray-800">
             <div className="flex gap-4 items-center">
-              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`})` }} />
+              <div className="size-10 md:size-11 rounded-full bg-cover bg-center shrink-0 shadow-sm" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex-1 text-left bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-2xl px-5 py-3.5 text-xs md:text-sm font-medium transition-all border border-gray-100 dark:border-gray-700 shadow-inner"
@@ -724,7 +744,7 @@ const FeedPage: React.FC = () => {
               ) : (
                 activePostComments.map(comment => (
                   <div key={comment.id} className="flex gap-3">
-                    <div className="size-8 rounded-full bg-gray-200 shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(${getMediaUrl(comment.author.avatar) || `https://ui-avatars.com/api/?name=${comment.author.name}&background=random`})` }} />
+                    <div className="size-8 rounded-full bg-gray-200 shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(${getMediaUrl(comment.author.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
                     <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none text-sm w-full">
                       <div className="flex justify-between items-center mb-1">
                         <p className="font-bold text-xs">{comment.author.name}</p>
