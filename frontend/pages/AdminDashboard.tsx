@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
 import { ModerationItem } from '../types';
-import { adminAPI, moderationAPI } from '../api';
+import { adminAPI, moderationAPI, getMediaUrl } from '../api';
 import { useModal } from '../contexts/ModalContext';
 
 interface DashboardStats {
@@ -100,7 +100,7 @@ const AdminDashboard: React.FC = () => {
                        <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0">
                           #{idx + 1}
                        </div>
-                       <div className="size-10 rounded-xl bg-cover bg-center border-2 border-white dark:border-gray-700 shadow-sm" style={{ backgroundImage: `url(${user.avatar || `https://ui-avatars.com/api/?name=${user.name}`})` }} />
+                       <div className="size-10 rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${getMediaUrl(user.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
                        <div className="flex-1 overflow-hidden">
                           <p className="font-black text-sm uppercase tracking-tight truncate dark:text-white group-hover:text-primary transition-colors">{user.name}</p>
                           <p className="text-[10px] text-gray-400 font-bold uppercase truncate">{user.school}</p>
