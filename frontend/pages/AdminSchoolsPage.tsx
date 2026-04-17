@@ -235,13 +235,15 @@ const AdminSchoolsPage: React.FC = () => {
                                 <td className="p-5 text-sm font-medium text-gray-700">{school.inep || '—'}</td>
                                 <td className="p-5">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${school.zone === 'RURAL'
-                                        ? 'bg-green-50 text-green-700 border-green-100'
-                                        : 'bg-blue-50 text-blue-700 border-blue-100'
+                                        ? 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30'
+                                        : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'
                                         }`}>
                                         {school.zone || 'N/A'}
                                     </span>
                                     {school.schoolType && (
-                                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${school.schoolType === 'CRECHE' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-purple-50 text-purple-700 border-purple-100'
+                                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${school.schoolType === 'CRECHE' 
+                                            ? 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30' 
+                                            : 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/30'
                                             }`}>
                                             {school.schoolType}
                                         </span>
@@ -306,35 +308,35 @@ const AdminSchoolsPage: React.FC = () => {
                         </div>
                         <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Nome da Escola</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Nome da Escola</label>
                                 <input
                                     required
                                     value={newSchool.name}
                                     onChange={e => setNewSchool({ ...newSchool, name: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Email Administrativo</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Email Administrativo</label>
                                 <input
                                     required
                                     type="email"
                                     value={newSchool.email}
                                     onChange={e => setNewSchool({ ...newSchool, email: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Senha de Acesso</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Senha de Acesso</label>
                                 <div className="relative">
                                     <input
                                         required
                                         type={showPassword ? 'text' : 'password'}
                                         value={newSchool.password}
                                         onChange={e => setNewSchool({ ...newSchool, password: e.target.value })}
-                                        className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none pr-10"
+                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none pr-10 dark:text-white"
                                     />
                                     <button
                                         type="button"
@@ -347,20 +349,20 @@ const AdminSchoolsPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Código INEP</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Código INEP</label>
                                 <input
                                     value={newSchool.inep}
                                     onChange={e => setNewSchool({ ...newSchool, inep: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Zona</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Zona</label>
                                 <select
                                     value={newSchool.zone}
                                     onChange={e => setNewSchool({ ...newSchool, zone: e.target.value as any })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none appearance-none dark:text-white"
                                 >
                                     <option value="URBANA">Urbana</option>
                                     <option value="RURAL">Rural</option>
@@ -368,11 +370,11 @@ const AdminSchoolsPage: React.FC = () => {
                             </div>
 
                             <div className="col-span-2 md:col-span-1">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Tipo de Unidade</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Tipo de Unidade</label>
                                 <select
                                     value={newSchool.schoolType}
                                     onChange={e => setNewSchool({ ...newSchool, schoolType: e.target.value as any })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none appearance-none dark:text-white"
                                 >
                                     <option value="ESCOLA">Escola (EMEF)</option>
                                     <option value="CRECHE">Creche</option>
@@ -381,29 +383,29 @@ const AdminSchoolsPage: React.FC = () => {
                             </div>
 
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Endereço Completo</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Endereço Completo</label>
                                 <input
                                     value={newSchool.address}
                                     onChange={e => setNewSchool({ ...newSchool, address: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                     placeholder="Rua, Número, Bairro, CEP"
                                 />
                             </div>
 
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Telefone/Contato</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Telefone/Contato</label>
                                 <input
                                     value={newSchool.phone}
                                     onChange={e => setNewSchool({ ...newSchool, phone: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
-                            <div className="col-span-2 flex justify-end gap-3 mt-4 border-t pt-4">
+                            <div className="col-span-2 flex justify-end gap-3 mt-4 border-t dark:border-gray-800 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                                    className="px-6 py-3 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
@@ -422,7 +424,7 @@ const AdminSchoolsPage: React.FC = () => {
             {/* Edit Modal */}
             {editingSchool && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-                    <div className="bg-white rounded-3xl p-10 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-10 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh] border border-gray-100 dark:border-gray-800">
                         <div className="flex justify-between items-center mb-8">
                             <div className="flex items-center gap-3">
                                 <div className="size-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -439,41 +441,41 @@ const AdminSchoolsPage: React.FC = () => {
                         </div>
                         <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Nome da Escola</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Nome da Escola</label>
                                 <input
                                     required
                                     value={editingSchool.name}
                                     onChange={e => setEditingSchool({ ...editingSchool, name: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Email Administrativo</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Email Administrativo</label>
                                 <input
                                     required
                                     type="email"
                                     value={editingSchool.email}
                                     onChange={e => setEditingSchool({ ...editingSchool, email: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Código INEP</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Código INEP</label>
                                 <input
                                     value={editingSchool.inep}
                                     onChange={e => setEditingSchool({ ...editingSchool, inep: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Zona</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Zona</label>
                                 <select
                                     value={editingSchool.zone}
                                     onChange={e => setEditingSchool({ ...editingSchool, zone: e.target.value as any })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none appearance-none dark:text-white"
                                 >
                                     <option value="URBANA">Urbana</option>
                                     <option value="RURAL">Rural</option>
@@ -481,11 +483,11 @@ const AdminSchoolsPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Tipo de Unidade</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Tipo de Unidade</label>
                                 <select
                                     value={editingSchool.schoolType}
                                     onChange={e => setEditingSchool({ ...editingSchool, schoolType: e.target.value as any })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none appearance-none dark:text-white"
                                 >
                                     <option value="ESCOLA">Escola (EMEF)</option>
                                     <option value="CRECHE">Creche</option>
@@ -494,28 +496,28 @@ const AdminSchoolsPage: React.FC = () => {
                             </div>
 
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Endereço Completo</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Endereço Completo</label>
                                 <input
                                     value={editingSchool.address}
                                     onChange={e => setEditingSchool({ ...editingSchool, address: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
                             <div className="col-span-2">
-                                <label className="block text-sm font-bold mb-1.5 text-gray-700">Telefone/Contato</label>
+                                <label className="block text-sm font-bold mb-1.5 text-gray-700 dark:text-gray-300">Telefone/Contato</label>
                                 <input
                                     value={editingSchool.phone}
                                     onChange={e => setEditingSchool({ ...editingSchool, phone: e.target.value })}
-                                    className="w-full bg-gray-50 border-gray-200 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl p-3.5 focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-gray-900 transition-all outline-none dark:text-white"
                                 />
                             </div>
 
-                            <div className="col-span-2 flex justify-end gap-3 mt-6 border-t pt-6">
+                            <div className="col-span-2 flex justify-end gap-3 mt-6 border-t dark:border-gray-800 pt-6">
                                 <button
                                     type="button"
                                     onClick={() => setEditingSchool(null)}
-                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                                    className="px-6 py-3 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>

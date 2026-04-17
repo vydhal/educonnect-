@@ -8,6 +8,7 @@ interface ConfirmDialogProps {
   type?: 'error' | 'success' | 'info' | 'warning';
   onConfirm?: () => void;
   confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ 
@@ -17,7 +18,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   message, 
   type = 'info', 
   onConfirm, 
-  confirmLabel = 'OK' 
+  confirmLabel = 'OK',
+  cancelLabel = 'Cancelar'
 }) => {
   if (!isOpen) return null;
 
@@ -72,7 +74,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               onClick={onClose}
               className="px-4 py-3 md:py-3.5 rounded-xl text-xs md:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-colors"
             >
-              Cancelar
+              {cancelLabel}
             </button>
           )}
           <button 

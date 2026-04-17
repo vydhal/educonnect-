@@ -232,8 +232,15 @@ const NetworkPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.role !== 'ESCOLA' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                        }`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        item.role === 'PROFESSOR' ? 'bg-purple-50 text-purple-600' : 
+                        item.role === 'GESTOR' ? 'bg-blue-50 text-blue-600' :
+                        item.role === 'SUPERVISOR' ? 'bg-green-50 text-green-600' :
+                        item.role === 'COORDENADOR' ? 'bg-orange-50 text-orange-600' :
+                        item.role === 'ADMIN' ? 'bg-red-50 text-red-600' :
+                        item.role !== 'ESCOLA' ? 'bg-gray-50 text-gray-600' :
+                        'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                      }`}>
                         {item.role === 'ESCOLA' ? (item.schoolType || 'UNIDADE') : item.role}
                       </span>
                     </div>

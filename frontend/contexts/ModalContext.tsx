@@ -7,6 +7,7 @@ interface ModalOptions {
   type?: 'error' | 'success' | 'info' | 'warning';
   onConfirm?: () => void;
   confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 interface ModalContextType {

@@ -18,8 +18,11 @@ const ROLE_MAP: Record<string, string> = {
   'ADMIN': 'ADMIN',
   'TEACHER': 'PROFESSOR',
   'STUDENT': 'ALUNO',
-  'MANAGER': 'MODERADOR',
-  'PEDAGOGICAL': 'COLABORADOR',
+  'MANAGER': 'GESTOR',
+  'PEDAGOGICAL': 'COORDENADOR',
+  'SUPERVISOR': 'SUPERVISOR',
+  'COORDINATOR': 'COORDENADOR',
+  'SECRETARY': 'GESTOR',
 };
 
 export const mapPortalRole = (portalRole: string): string => {

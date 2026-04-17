@@ -1,5 +1,5 @@
 
-export type UserRole = 'PROFESSOR' | 'ALUNO' | 'ESCOLA' | 'COMUNIDADE' | 'ADMIN';
+export type UserRole = 'PROFESSOR' | 'ALUNO' | 'ESCOLA' | 'COMUNIDADE' | 'ADMIN' | 'GESTOR' | 'COORDENADOR' | 'SUPERVISOR';
 
 export interface Post {
   id: string;
