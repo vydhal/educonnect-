@@ -119,25 +119,18 @@ export const RichPostInput: React.FC<RichPostInputProps> = ({
 
     const imageUploadRef = useRef<{ triggerUpload: () => void } | null>(null);
 
-    // Auto-expand textarea
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = '120px'; // Reset to min-height
-            const scrollHeight = textareaRef.current.scrollHeight;
-            textareaRef.current.style.height = `${Math.max(120, scrollHeight)}px`;
-        }
-    }, [content]);
+    // Auto-expand removed in favor of flex-1 to fill dialog height
 
     return (
-        <div className="relative z-30 flex flex-col w-full">
-            <div className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-[32px] p-4 md:p-6 transition-all focus-within:border-primary/30 focus-within:shadow-xl shadow-sm group">
+        <div className="relative z-30 flex flex-col w-full flex-1 h-full">
+            <div className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-[32px] p-4 md:p-6 transition-all focus-within:border-primary/30 focus-within:shadow-xl shadow-sm group flex flex-col flex-1 h-full">
                 {/* Text Area */}
-                <div className="relative">
+                <div className="relative flex-1 flex flex-col">
                     <textarea
                         ref={textareaRef}
                         value={content}
                         onChange={handleContentChange}
-                        className="w-full bg-transparent border-none focus:ring-0 resize-none dark:text-gray-100 placeholder-gray-400 text-base md:text-lg outline-none font-medium overflow-hidden transition-all duration-100 min-h-[120px]"
+                        className="w-full bg-transparent border-none focus:ring-0 resize-none dark:text-gray-100 placeholder-gray-400 text-base md:text-lg outline-none font-medium transition-all duration-100 flex-1 min-h-[200px]"
                         placeholder="Sobre o que você quer falar?"
                         rows={1}
                     />
@@ -173,7 +166,7 @@ export const RichPostInput: React.FC<RichPostInputProps> = ({
                         ref={imageUploadRef}
                         images={images}
                         onImagesChange={setImages}
-                        hideButton={images.length > 0} 
+                        hideButton={true} 
                     />
                 </div>
 

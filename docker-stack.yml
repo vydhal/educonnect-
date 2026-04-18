@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # Banco de Dados do EduConnect
+  educonnect_postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-educonnect_db}
+      POSTGRES_USER: ${POSTGRES_USER:-educonnect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-educonnect123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - educonnect_postgres_data:/var/lib/postgresql/data
+    networks:
+      - educonnect-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-educonnect} -d ${POSTGRES_DB:-educonnect_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  # Backend API EduConnect
+  educonnect_backend:
+    image: cayquesilva/educonnect-backend:latest
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-educonnect}:${POSTGRES_PASSWORD:-educonnect123}@educonnect_postgres:5432/${POSTGRES_DB:-educonnect_db}?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: https://${FRONTEND_DOMAIN}
+      
+      # 🔌 Comunicação Estrutural com o Portal Educampina
+      # Aponta para o serviço definido no outro YAML se estiverem na mesma rede
+      PORTAL_API_URL: ${PORTAL_API_URL:-http://educampina_demo_backend:3000}
+      PORTAL_API_KEY: ${PORTAL_API_KEY}
+      
+      # EduConnect SSO
+      EDUCONNECT_API_KEY: ${EDUCONNECT_API_KEY}
+      SOCIAL_SSO_SECRET: ${SOCIAL_SSO_SECRET}
+      EDUCONNECT_URL: https://${FRONTEND_DOMAIN}
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npx tsx src/server.ts"
+    volumes:
+      - educonnect_uploads_data:/app/public/uploads
+    networks:
+      - educonnect-net
+      - educampina_educampina-demo-net
+      - public-proxy-v2
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.educonnect_backend.rule=Host(`${BACKEND_DOMAIN}`)"
+        - "traefik.http.routers.educonnect_backend.entrypoints=websecure"
+        - "traefik.http.routers.educonnect_backend.tls=true"
+        - "traefik.http.routers.educonnect_backend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.educonnect_backend.loadbalancer.server.port=5000"
+        - "traefik.docker.network=public-proxy-v2"
+
+  # Frontend EduConnect
+  educonnect_frontend:
+    image: cayquesilva/educonnect-frontend:latest
+    environment:
+      # URL da API resolvida pelo Traefik
+      VITE_API_URL: https://${BACKEND_DOMAIN}/api
+    networks:
+      - educonnect-net
+      - public-proxy-v2
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.educonnect_frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
+        - "traefik.http.routers.educonnect_frontend.entrypoints=websecure"
+        - "traefik.http.routers.educonnect_frontend.tls=true"
+        - "traefik.http.routers.educonnect_frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.educonnect_frontend.loadbalancer.server.port=3000"
+        - "traefik.docker.network=public-proxy-v2"
+
+volumes:
+  educonnect_postgres_data:
+    driver: local
+  educonnect_uploads_data:
+    driver: local
+
+networks:
+  # Rede interna do EduConnect
+  educonnect-net:
+    driver: overlay
+    attachable: true
+  # Rede de integração com o Portal (deve bater com o nome da rede do Portal)
+  educampina_educampina-demo-net:
+    external: true
+  # Rede do Traefik/Proxy
+  public-proxy-v2:
+    external: true

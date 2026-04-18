@@ -1,5 +1,5 @@
 import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { uploadAPI } from '../api';
+import { uploadAPI, getMediaUrl } from '../api';
 import { useModal } from '../contexts/ModalContext';
 
 interface MultiImageUploadProps {
@@ -52,22 +52,24 @@ export const MultiImageUpload = forwardRef<{ triggerUpload: () => void }, MultiI
         };
 
         return (
-            <div className="space-y-3">
-                {/* Image Grid */}
+            <div className="space-y-3 w-full">
+                {/* Image Grid - Smaller thumbnails, aligned left */}
                 {images.length > 0 && (
-                    <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                        {images.map((url, index) => (
-                            <div key={index} className="relative group aspect-video bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border dark:border-gray-700 shadow-sm">
-                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
-                                <button
-                                    onClick={() => removeImage(index)}
-                                    className="absolute top-2 right-2 bg-black/60 text-white size-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-md"
-                                >
-                                    <span className="material-symbols-outlined text-sm">close</span>
-                                </button>
-                            </div>
-                        ))}
+                    <div className="max-h-[30vh] overflow-y-auto custom-scrollbar pr-2">
+                        <div className="flex flex-wrap gap-3 items-start justify-start">
+                            {images.map((url, index) => (
+                                <div key={index} className="relative group size-20 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border dark:border-gray-700 shadow-sm shrink-0">
+                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getMediaUrl(url)})` }} />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                                    <button
+                                        onClick={() => removeImage(index)}
+                                        className="absolute top-1 right-1 bg-black/60 text-white size-6 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-md"
+                                    >
+                                        <span className="material-symbols-outlined text-[10px]">close</span>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

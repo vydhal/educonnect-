@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants';
+import { getMediaUrl } from '../api';
 
 interface BottomNavigationProps {
     activeTab: 'home' | 'network' | 'projects' | 'profile';
@@ -49,11 +50,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, u
             </button>
 
             <button 
-                onClick={() => navigate('/settings')} 
+                onClick={() => navigate(user?.id ? `/profile/${user.id}` : '/settings')} 
                 className={`flex flex-col items-center gap-0.5 w-12 ${activeTab === 'profile' ? 'text-primary' : 'text-gray-400'}`}
             >
-                <div className={`size-7 rounded-full bg-cover bg-center border-2 ${activeTab === 'profile' ? 'border-primary shadow-sm' : 'border-gray-300'}`}
-                    style={{ backgroundImage: `url(${user?.avatar || IMAGES.DEFAULT_AVATAR})` }}
+                <div className={`size-7 rounded-full bg-cover bg-center border-2 ${activeTab === 'profile' ? 'border-primary shadow-sm' : 'border-gray-200 opacity-80'}`}
+                    style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }}
                 />
                 <span className="text-[9px] font-black uppercase tracking-tighter">Perfil</span>
             </button>

@@ -20,12 +20,12 @@ interface FeedPost extends Post {
 const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode }> = ({ onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full md:max-w-[550px] h-full md:h-auto rounded-none md:rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:max-h-[90vh]">
+    <div className="relative bg-white dark:bg-gray-900 w-[80vw] h-[90vh] rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden">
       <div className="px-6 py-5 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
         <h2 className="text-xl font-black">Criar Publicação</h2>
         <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><span className="material-symbols-outlined">close</span></button>
       </div>
-      <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar overflow-x-visible flex-1">
+      <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar overflow-x-visible flex-1 h-full flex flex-col">
         {children}
       </div>
     </div>
