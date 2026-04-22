@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
-import { usersAPI, getMediaUrl } from '../api';
+import { usersAPI, getMediaUrl, getRoleTitle } from '../api';
 import { IMAGES } from '../constants';
 
 interface SchoolUser {
@@ -15,6 +15,8 @@ interface SchoolUser {
   schoolId?: string;
   _count?: {
     followers: number;
+    sentFriendships?: number;
+    receivedFriendships?: number;
   };
 }
 
@@ -251,7 +253,7 @@ const NetworkPage: React.FC = () => {
                         item.role !== 'ESCOLA' ? 'bg-gray-50 text-gray-600' :
                         'bg-gray-100 dark:bg-gray-800 text-gray-500'
                       }`}>
-                        {item.role === 'ESCOLA' ? (item.schoolType || 'UNIDADE') : item.role}
+                        {item.role === 'ESCOLA' ? (item.schoolType || 'UNIDADE') : getRoleTitle(item.role)}
                       </span>
                     </div>
                     <h3
@@ -267,8 +269,14 @@ const NetworkPage: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-2 gap-4 border-t dark:border-gray-800 pt-6">
                       <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase mb-1">Favoritos</p>
-                        <p className="text-lg font-black text-primary">{item._count?.followers || 0}</p>
+                        <p className="text-xs text-gray-400 font-bold uppercase mb-1">
+                          {item.role === 'ESCOLA' ? 'Favoritos' : 'Amigos'}
+                        </p>
+                        <p className="text-lg font-black text-primary">
+                          {item.role === 'ESCOLA' 
+                            ? (item._count?.followers || 0) 
+                            : ((item._count?.sentFriendships || 0) + (item._count?.receivedFriendships || 0))}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 font-bold uppercase mb-1">Status</p>

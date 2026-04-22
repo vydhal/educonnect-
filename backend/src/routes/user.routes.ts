@@ -73,7 +73,11 @@ router.get('/', optionalAuthMiddleware, async (req: AuthenticatedRequest, res: R
         schoolId: true,
         verified: true,
         _count: {
-          select: { followers: true }
+          select: { 
+            followers: true,
+            sentFriendships: { where: { status: 'ACCEPTED' } },
+            receivedFriendships: { where: { status: 'ACCEPTED' } }
+          }
         },
         ...(currentUserId ? {
             followers: {
