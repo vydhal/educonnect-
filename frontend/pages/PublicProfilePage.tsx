@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
-import { usersAPI, socialAPI, authAPI, projectsAPI, badgeTypesAPI, getMediaUrl } from '../api';
+import { usersAPI, socialAPI, authAPI, projectsAPI, badgeTypesAPI, getMediaUrl, postsAPI, getRoleTitle } from '../api';
+import { ReactionButton } from '../components/ReactionButton';
+import { ImageCarousel } from '../components/ImageCarousel';
 import { useModal } from '../contexts/ModalContext';
 import { IMAGES } from '../constants';
 
@@ -25,12 +27,57 @@ const PublicProfilePage: React.FC = () => {
     const [friendsCount, setFriendsCount] = useState(0);
     const [pendingTestimonials, setPendingTestimonials] = useState<any[]>([]);
 
+    const [userPosts, setUserPosts] = useState<any[]>([]);
+    const [loadingPosts, setLoadingPosts] = useState(false);
+
     // UI states
     const [activeTab, setActiveTab] = useState<'info' | 'depoimentos' | 'projetos'>('info');
     const [testimonialContent, setTestimonialContent] = useState('');
     const [isSendingTestimonial, setIsSendingTestimonial] = useState(false);
 
     const isOwner = currentUser?.id === id || (currentUser?.id && id && currentUser.id.toString() === id.toString());
+
+    const timeAgo = (date: string) => {
+        const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " anos atrás";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " meses atrás";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " dias atrás";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h atrás";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m atrás";
+        return "Agora mesmo";
+    };
+
+    const renderContent = (content: string) => {
+        if (!content) return null;
+        const parts = content.split(/(#[\w\u00C0-\u00FF]+)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('#')) {
+                return <span key={i} className="text-primary font-bold">{part}</span>;
+            }
+            return part;
+        });
+    };
+
+    const formatPost = (apiPost: any) => ({
+        id: apiPost.id,
+        author: apiPost.author.name,
+        authorId: apiPost.author.id,
+        authorTitle: apiPost.author.school || getRoleTitle(apiPost.author.role),
+        authorAvatar: getMediaUrl(apiPost.author.avatar) || IMAGES.DEFAULT_AVATAR,
+        content: apiPost.content,
+        timestamp: timeAgo(apiPost.createdAt),
+        likes: apiPost.likes,
+        commentsCount: apiPost.commentsCount || (apiPost.comments ? apiPost.comments.length : 0),
+        comments: apiPost.comments || [],
+        images: apiPost.images && apiPost.images.length > 0 ? apiPost.images : (apiPost.image ? [apiPost.image] : []),
+        isVerified: apiPost.author.verified,
+        userReaction: apiPost.userReaction
+    });
 
     useEffect(() => {
         if (!id) return;
@@ -78,15 +125,42 @@ const PublicProfilePage: React.FC = () => {
                     socialAPI.recordProfileView(id).catch(console.error);
                 }
 
+                // Fetch user posts
+                setLoadingPosts(true);
+                const posts = await postsAPI.getPosts({ authorId: id });
+                setUserPosts(posts.map(formatPost));
+                setLoadingPosts(false);
+
             } catch (error) {
                 console.error('Failed to load profile', error);
             } finally {
                 setLoading(false);
+                setLoadingPosts(false);
             }
         };
 
         fetchData();
     }, [id]);
+
+    const handleReaction = async (postId: string, type: string) => {
+        try {
+            setUserPosts(prev => prev.map(p => {
+                if (p.id === postId) {
+                    const wasLiked = !!p.userReaction;
+                    const isToggleOff = wasLiked && p.userReaction === type;
+                    return {
+                        ...p,
+                        userReaction: isToggleOff ? null : type,
+                        likes: isToggleOff ? p.likes - 1 : (wasLiked ? p.likes : p.likes + 1)
+                    };
+                }
+                return p;
+            }));
+            await postsAPI.likePost(postId, type);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const handleFollow = async () => {
         if (!id || !currentUser) return;
@@ -230,13 +304,13 @@ const PublicProfilePage: React.FC = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#f0f2f5] dark:bg-gray-900"><span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span></div>;
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#f0f2f5] dark:bg-background-dark">
+        <div className="flex flex-col h-screen overflow-hidden bg-[#f0f2f5] dark:bg-background-dark">
             <Header activeTab={isOwner ? 'profile' : 'network'} onLogout={() => navigate('/login')} user={currentUser} />
 
-            <main className="max-w-[1200px] w-full mx-auto p-4 md:p-6 pb-24 md:pb-8 flex flex-col md:flex-row gap-6">
+            <main className="flex-1 flex flex-col md:flex-row max-w-[1400px] w-full mx-auto overflow-hidden">
 
-                {/* Profile Info Sidebar */}
-                <aside className="md:w-80 shrink-0 space-y-6">
+                {/* Profile Info Sidebar (Fixed/Scrollable) */}
+                <aside className="w-full md:w-[360px] shrink-0 overflow-y-auto p-4 md:p-8 custom-scrollbar space-y-6">
                     <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden pb-8 transition-all">
                         {/* Profile Cover Gradient */}
                         <div className="h-32 w-full bg-gradient-to-r from-[#15803d] to-[#1d4ed8]" />
@@ -397,65 +471,142 @@ const PublicProfilePage: React.FC = () => {
                 </aside>
 
                 {/* Main Content Area */}
-                <div className="flex-1 space-y-6">
-                    {/* Display Badge Counts Always */}
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-wrap justify-around gap-4">
-                        {badges.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic">Nenhum selo recebido ainda.</p>
-                        ) : (
-                            badges.map(b => (
-                                <BadgeDisplay 
-                                    key={b.typeId}
-                                    icon={b.icon} 
-                                    label={b.name} 
-                                    count={b.count} 
-                                    color={b.color} 
-                                    isGivenByMe={b.isGivenByMe}
-                                />
-                            ))
-                        )}
+                <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-900 border-l dark:border-gray-800">
+                    {/* Fixed Header for Content Area (Badges + Tabs) */}
+                    <div className="bg-[#f0f2f5] dark:bg-background-dark p-4 md:p-8 pb-4 shrink-0 z-20 space-y-6 border-b dark:border-gray-800">
+                        <div className="max-w-[800px] mx-auto w-full space-y-6">
+                            {/* Display Badge Counts Always */}
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-wrap justify-around gap-6">
+                                {badges.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">Nenhum reconhecimento ainda.</p>
+                                ) : (
+                                    badges.map(b => (
+                                        <BadgeDisplay 
+                                            key={b.typeId}
+                                            icon={b.icon} 
+                                            label={b.name} 
+                                            count={b.count} 
+                                            color={b.color} 
+                                            isGivenByMe={b.isGivenByMe}
+                                        />
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Tabs Navigation */}
+                            <div className="flex bg-white dark:bg-gray-900 p-1.5 rounded-2xl border dark:border-gray-800 shadow-sm">
+                                {['info', 'depoimentos', 'projetos'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => {
+                                            setActiveTab(tab as any);
+                                            if (tab === 'depoimentos' && isOwner) {
+                                                socialAPI.getPendingTestimonials().then(setPendingTestimonials).catch(console.error);
+                                            }
+                                        }}
+                                        className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                                    >
+                                        {tab === 'info' ? 'Sobre & Publicações' : (tab === 'depoimentos' ? 'Depoimentos' : 'Projetos')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="flex border-b dark:border-gray-800">
-                        {['info', 'depoimentos', 'projetos'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => {
-                                    setActiveTab(tab as any);
-                                    if (tab === 'depoimentos') {
-                                        const currentIsOwner = currentUser?.id === id || (currentUser?.id && id && currentUser.id.toString() === id.toString());
-                                        if (currentIsOwner) {
-                                            console.log('FRONTEND: Owners testimonials tab clicked, fetching pending...');
-                                            socialAPI.getPendingTestimonials()
-                                                .then(data => {
-                                                    console.log('FRONTEND: Pending data received:', data);
-                                                    setPendingTestimonials(data || []);
-                                                })
-                                                .catch(err => console.error('FRONTEND: Failed to fetch pending', err));
-                                        }
-                                    }
-                                }}
-                                className={`px-8 py-4 text-sm font-bold capitalize transition-all relative ${activeTab === tab ? 'text-primary' : 'text-gray-400'}`}
-                            >
-                                {tab}
-                                {activeTab === tab && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full" />}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="min-h-[400px]">
+                    {/* Scrollable Content Section */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#f0f2f5] dark:bg-background-dark">
+                        <div className="max-w-[800px] mx-auto w-full p-4 md:p-8 pt-6">
+                            <div className="min-h-[400px] pb-20">
                         {activeTab === 'info' && (
-                            <div className="space-y-6">
+                            <div className="space-y-8 max-w-[640px] mx-auto">
                                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-                                    <h3 className="font-black text-xl mb-4 dark:text-white">Sobre a Instituição/Usuário</h3>
+                                    <h3 className="font-black text-xl mb-4 dark:text-white flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-primary">person</span> Sobre
+                                    </h3>
                                     <p className="text-gray-500 leading-relaxed whitespace-pre-wrap">{profileUser?.bio || 'Tudo flui melhor com educação.'}</p>
+                                </div>
+
+                                {/* User Posts */}
+                                <div className="space-y-6 max-w-[640px] mx-auto">
+                                    <div className="flex items-center justify-between px-4">
+                                        <h3 className="font-black text-xl dark:text-white">Publicações</h3>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userPosts.length} posts</span>
+                                    </div>
+                                    {loadingPosts ? (
+                                        <div className="flex justify-center p-8"><span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span></div>
+                                    ) : userPosts.length === 0 ? (
+                                        <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 text-gray-400 italic">
+                                            Nenhuma publicação encontrada.
+                                        </div>
+                                    ) : (
+                                        userPosts.map(post => (
+                                            <article key={post.id} className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                                <div className="p-6 flex items-center gap-3">
+                                                    <div
+                                                        className="size-12 rounded-full bg-cover bg-center shrink-0 border-2 border-white dark:border-gray-800 shadow-md"
+                                                        style={{ backgroundImage: `url(${post.authorAvatar})` }}
+                                                    />
+                                                    <div>
+                                                        <div className="flex items-center gap-1">
+                                                            <h4 className="font-bold text-sm dark:text-white">{post.author}</h4>
+                                                            {post.isVerified && <span className="material-symbols-outlined text-primary text-sm font-fill-1">verified</span>}
+                                                        </div>
+                                                        <p className="text-[11px] text-gray-500">{post.authorTitle} • {post.timestamp}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-6 pb-6">
+                                                    <div className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{renderContent(post.content)}</div>
+                                                </div>
+
+                                                {post.images && post.images.length > 0 && (
+                                                    <ImageCarousel images={post.images} />
+                                                )}
+
+                                                {post.comments && post.comments.length > 0 && (
+                                                    <div className="px-6 py-5 border-t dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20">
+                                                        <div className="space-y-4">
+                                                            {post.comments.map((comment: any) => (
+                                                                <div key={comment.id} className="flex gap-3 group/comment">
+                                                                    <div 
+                                                                        className="size-8 rounded-full bg-cover bg-center shrink-0 border border-white dark:border-gray-700 shadow-sm"
+                                                                        style={{ backgroundImage: `url(${getMediaUrl(comment.author.avatar) || IMAGES.DEFAULT_AVATAR})` }}
+                                                                    />
+                                                                    <div className="bg-white dark:bg-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-700 flex-1">
+                                                                        <p className="font-bold text-[10px] text-primary mb-1">{comment.author.name}</p>
+                                                                        <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight">{comment.content}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="grid grid-cols-2 p-1 border-t dark:border-gray-800">
+                                                    <div className="flex justify-center">
+                                                        <ReactionButton
+                                                            postId={post.id}
+                                                            currentUserReaction={post.userReaction || null}
+                                                            likesCount={post.likes}
+                                                            onReact={(type) => handleReaction(post.id, type)}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => navigate(`/post/${post.id}`)}
+                                                        className="flex items-center justify-center gap-2 py-3 text-[10px] md:text-sm font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors"
+                                                    >
+                                                        <span className="material-symbols-outlined">chat</span>
+                                                        <span>{post.commentsCount > 0 ? `(${post.commentsCount})` : 'Comentar'}</span>
+                                                    </button>
+                                                </div>
+                                            </article>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'depoimentos' && (
-                            <div className="space-y-8">
+                            <div className="space-y-8 max-w-[640px] mx-auto">
                                 {!isOwner && currentUser && (
                                     <form onSubmit={handleSendTestimonial} className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-primary/20">
                                         <h3 className="font-bold text-sm mb-4">Deixar um depoimento</h3>
@@ -540,10 +691,12 @@ const PublicProfilePage: React.FC = () => {
                         )}
 
                         {activeTab === 'projetos' && (
-                                <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 text-gray-400 italic">
+                                <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 text-gray-400 italic max-w-[640px] mx-auto">
                                 Projetos da instituição estarão disponíveis em breve nesta visualização.
                             </div>
                         )}
+                    </div>
+                    </div>
                     </div>
                 </div>
             </main>
