@@ -11,7 +11,7 @@ import { ImageCarousel } from '../components/ImageCarousel';
 import { useModal } from '../contexts/ModalContext';
 
 // Extend Post type locally if not updated in types.ts yet
-interface FeedPost extends Post {
+interface FeedPost extends Omit<Post, 'comments'> {
   userReaction?: string | null;
   images?: string[];
   commentsCount: number;
@@ -350,7 +350,7 @@ const FeedPage: React.FC = () => {
     try {
       await postsAPI.deleteComment(interactionModal.postId, commentId);
       setActivePostComments(prev => prev.filter(c => c.id !== commentId));
-      setPosts(prev => prev.map(p => p.id === interactionModal.postId ? { ...p, comments: p.comments - 1 } : p));
+      setPosts(prev => prev.map(p => p.id === interactionModal.postId ? { ...p, commentsCount: p.commentsCount - 1 } : p));
     } catch (error) {
       console.error('Failed to delete comment', error);
       showModal({ title: 'Erro', message: 'Falha ao excluir comentário.', type: 'error' });
@@ -615,24 +615,32 @@ const FeedPage: React.FC = () => {
 
                 {/* Top 3 Comments Preview */}
                 {post.comments && post.comments.length > 0 && (
-                  <div className="px-4 py-3 border-t dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/10">
-                    <div className="space-y-2">
+                  <div className="px-4 py-4 border-t dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                    <div className="space-y-3">
                       {post.comments.map((comment: any) => (
-                        <div key={comment.id} className="text-xs leading-tight">
-                          <span 
-                            onClick={() => navigate(`/profile/${comment.author.id}`)}
-                            className="font-bold mr-1 cursor-pointer hover:text-primary transition-colors text-primary/80"
-                          >
-                            {comment.author.name}
-                          </span>
-                          <span className="text-gray-600 dark:text-gray-400">{comment.content}</span>
+                        <div key={comment.id} className="flex gap-2 group/comment">
+                          <div 
+                            className="size-7 rounded-full bg-cover bg-center shrink-0 border border-white dark:border-gray-700 shadow-sm"
+                            style={{ backgroundImage: `url(${getMediaUrl(comment.author.avatar) || IMAGES.DEFAULT_AVATAR})` }}
+                          />
+                          <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-700 flex-1">
+                            <p 
+                              onClick={() => navigate(`/profile/${comment.author.id}`)}
+                              className="font-bold text-[10px] text-primary cursor-pointer hover:underline mb-0.5"
+                            >
+                              {comment.author.name}
+                            </p>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight">
+                              {comment.content}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
                     {post.commentsCount > 3 && (
                       <button 
                         onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
-                        className="text-[10px] font-black text-primary mt-3 hover:underline uppercase tracking-wider"
+                        className="text-[10px] font-black text-primary/60 hover:text-primary mt-4 hover:underline uppercase tracking-widest block mx-auto transition-colors"
                       >
                         Ver todos os {post.commentsCount} comentários
                       </button>

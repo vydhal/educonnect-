@@ -146,11 +146,15 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
 // Get all posts (feed)
 router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { tag, search } = req.query;
+    const { tag, search, authorId } = req.query;
     const where: any = {};
 
     if (tag) {
       where.tags = { has: tag as string };
+    }
+
+    if (authorId) {
+      where.authorId = authorId as string;
     }
 
     if (search) {

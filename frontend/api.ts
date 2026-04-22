@@ -128,11 +128,12 @@ export const authAPI = {
 
 // Posts API
 export const postsAPI = {
-  getPosts: (filters?: { tag?: string; search?: string }) => {
+  getPosts: (filters?: { tag?: string; search?: string; authorId?: string }) => {
     if (!filters) return request('/posts');
     const searchParams = new URLSearchParams();
     if (filters.tag) searchParams.append('tag', filters.tag);
     if (filters.search) searchParams.append('search', filters.search);
+    if (filters.authorId) searchParams.append('authorId', filters.authorId);
     const queryString = searchParams.toString();
     return request(`/posts${queryString ? `?${queryString}` : ''}`);
   },
