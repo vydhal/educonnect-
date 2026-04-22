@@ -26,6 +26,23 @@ export const getMediaUrl = (path: string | null | undefined) => {
   return `${baseHost}${cleanPath}`;
 };
 
+// Helper to get role display title
+export const getRoleTitle = (role: string | null | undefined) => {
+  if (!role) return 'Membro';
+  
+  const roles: Record<string, string> = {
+    'ADMIN': 'Administrador',
+    'SEDUC': 'SEDUC',
+    'EQUIPE_ESCOLAR': 'Equipe Escolar',
+    'PROFESSOR': 'Educador',
+    'ALUNO': 'Estudante',
+    'ESCOLA': 'Instituição',
+    'COMUNIDADE': 'Membro da Comunidade'
+  };
+
+  return roles[role] || role;
+};
+
 let token: string | null = localStorage.getItem('token');
 
 export const setAuthToken = (newToken: string) => {

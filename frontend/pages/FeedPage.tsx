@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Post, Comment } from '../types';
-import { postsAPI, authAPI, usersAPI, socialAPI, externalAPI, getMediaUrl } from '../api';
+import { postsAPI, authAPI, usersAPI, socialAPI, externalAPI, getMediaUrl, getRoleTitle } from '../api';
 import { ReactionButton } from '../components/ReactionButton';
 import { RichPostInput } from '../components/RichPostInput';
 import { RichCommentInput } from '../components/RichCommentInput';
@@ -181,7 +181,7 @@ const FeedPage: React.FC = () => {
     id: apiPost.id,
     author: apiPost.author.name,
     authorId: apiPost.author.id,
-    authorTitle: apiPost.author.school || (apiPost.author.role === 'ESCOLA' ? 'Instituição' : 'Educador'),
+    authorTitle: apiPost.author.school || getRoleTitle(apiPost.author.role),
     authorAvatar: getMediaUrl(apiPost.author.avatar) || IMAGES.DEFAULT_AVATAR,
     content: apiPost.content,
     timestamp: timeAgo(apiPost.createdAt),
@@ -435,7 +435,7 @@ const FeedPage: React.FC = () => {
             <div className="px-4 pb-4 -mt-8 flex flex-col items-center">
               <div className="size-20 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-900 bg-cover bg-center shadow-xl ring-4 ring-black/5 mb-3" style={{ backgroundImage: `url(${getMediaUrl(user?.avatar) || IMAGES.DEFAULT_AVATAR})` }} />
               <h3 className="font-bold text-lg dark:text-white text-center">{user?.name || 'Carregando...'}</h3>
-              <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || 'Membro da Comunidade')}</p>
+              <p className="text-sm text-gray-500 text-center">{user?.role === 'ESCOLA' ? 'Instituição de Ensino' : (user?.bio || getRoleTitle(user?.role))}</p>
               
               {/* Refined School Display for Multiple Units */}
               {user?.schools && user.schools.length > 0 ? (

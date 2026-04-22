@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Post } from '../types';
-import { postsAPI, authAPI, socialAPI, getMediaUrl } from '../api';
+import { postsAPI, authAPI, socialAPI, getMediaUrl, getRoleTitle } from '../api';
 import { Header } from '../components/Header';
 import { ReactionButton } from '../components/ReactionButton';
 import { ImageCarousel } from '../components/ImageCarousel';
@@ -41,7 +41,7 @@ const PostPage: React.FC = () => {
         id: apiPost.id,
         author: apiPost.author.name,
         authorId: apiPost.author.id,
-        authorTitle: apiPost.author.school || (apiPost.author.role === 'ESCOLA' ? 'Instituição' : 'Educador'),
+        authorTitle: apiPost.author.school || getRoleTitle(apiPost.author.role),
         authorAvatar: getMediaUrl(apiPost.author.avatar) || IMAGES.DEFAULT_AVATAR,
         content: apiPost.content,
         timestamp: timeAgo(apiPost.createdAt),
