@@ -14,6 +14,8 @@ import { useModal } from '../contexts/ModalContext';
 interface FeedPost extends Post {
   userReaction?: string | null;
   images?: string[];
+  commentsCount: number;
+  comments: any[];
 }
 
 // Reusable Components
@@ -35,7 +37,7 @@ const CreatePostModal: React.FC<{ onClose: () => void, children: React.ReactNode
 const InteractionModal: React.FC<{ title: string, onClose: () => void, children: React.ReactNode }> = ({ title, onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white dark:bg-gray-900 w-full md:max-w-[450px] rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom md:zoom-in duration-300">
+    <div className="relative bg-white dark:bg-gray-900 w-full md:max-w-[650px] rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom md:zoom-in duration-300">
       <div className="px-6 py-5 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
         <h2 className="text-lg font-black">{title}</h2>
         <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><span className="material-symbols-outlined">close</span></button>
@@ -186,7 +188,8 @@ const FeedPage: React.FC = () => {
     content: apiPost.content,
     timestamp: timeAgo(apiPost.createdAt),
     likes: apiPost.likes,
-    comments: apiPost.comments,
+    commentsCount: apiPost.commentsCount || (apiPost.comments ? apiPost.comments.length : 0),
+    comments: apiPost.comments || [],
     shares: 0,
     image: apiPost.image, // Legacy
     images: apiPost.images && apiPost.images.length > 0 ? apiPost.images : (apiPost.image ? [apiPost.image] : []),
@@ -289,10 +292,9 @@ const FeedPage: React.FC = () => {
         return p;
       }));
       await postsAPI.likePost(id, type);
-      fetchPosts();
     } catch (error) {
       console.error(error);
-      fetchPosts();
+      // Revert state on error if needed, but for now we just log
     }
   };
 
@@ -611,6 +613,33 @@ const FeedPage: React.FC = () => {
                   <ImageCarousel images={post.images} />
                 )}
 
+                {/* Top 3 Comments Preview */}
+                {post.comments && post.comments.length > 0 && (
+                  <div className="px-4 py-3 border-t dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/10">
+                    <div className="space-y-2">
+                      {post.comments.map((comment: any) => (
+                        <div key={comment.id} className="text-xs leading-tight">
+                          <span 
+                            onClick={() => navigate(`/profile/${comment.author.id}`)}
+                            className="font-bold mr-1 cursor-pointer hover:text-primary transition-colors text-primary/80"
+                          >
+                            {comment.author.name}
+                          </span>
+                          <span className="text-gray-600 dark:text-gray-400">{comment.content}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {post.commentsCount > 3 && (
+                      <button 
+                        onClick={() => setInteractionModal({ type: 'comment', postId: post.id })}
+                        className="text-[10px] font-black text-primary mt-3 hover:underline uppercase tracking-wider"
+                      >
+                        Ver todos os {post.commentsCount} comentários
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 p-1 border-t dark:border-gray-800 mt-2">
                   <div className="flex justify-center">
                     <ReactionButton
@@ -625,7 +654,7 @@ const FeedPage: React.FC = () => {
                     className="flex items-center justify-center gap-1.5 py-3 text-[10px] md:text-sm font-black uppercase tracking-tight text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <span className="material-symbols-outlined text-xl md:text-2xl">chat</span>
-                    <span>{post.comments > 0 ? `(${post.comments})` : 'Comentar'}</span>
+                    <span>{post.commentsCount > 0 ? `(${post.commentsCount})` : 'Comentar'}</span>
                   </button>
                   <button
                     onClick={() => setInteractionModal({ type: 'send', postId: post.id })}
@@ -737,8 +766,8 @@ const FeedPage: React.FC = () => {
 
       {interactionModal.type === 'comment' && (
         <InteractionModal title="Comentários" onClose={() => setInteractionModal({ type: null, postId: null })}>
-          <div className="space-y-4">
-            <div className="max-h-[300px] overflow-y-auto space-y-4 pr-2">
+          <div className="space-y-6 px-2">
+            <div className="max-h-[500px] overflow-y-auto space-y-5 pr-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
               {loadingComments ? (
                 <div className="flex justify-center p-4"><span className="material-symbols-outlined animate-spin text-primary">progress_activity</span></div>
               ) : activePostComments.length === 0 ? (

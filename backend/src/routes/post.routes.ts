@@ -169,6 +169,15 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
         _count: {
           select: { comments: true, likes: true }
         },
+        comments: {
+          take: 3,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            author: {
+              select: { id: true, name: true, avatar: true, role: true, verified: true }
+            }
+          }
+        },
         likes: req.userId ? {
           where: { userId: req.userId },
           select: { id: true, type: true }
@@ -181,7 +190,8 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
     const formattedPosts = posts.map((post: any) => ({
       ...post,
       likes: post._count.likes,
-      comments: post._count.comments,
+      commentsCount: post._count.comments,
+      comments: post.comments,
       liked: req.userId ? (post.likes as any)?.length > 0 : false,
       userReaction: req.userId ? (post.likes as any)?.[0]?.type || null : null
     }));
