@@ -1,0 +1,12 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "registration" TEXT,
+ADD COLUMN IF NOT EXISTS "classId" TEXT,
+ADD COLUMN IF NOT EXISTS "className" TEXT;
+
+-- AlterTable
+ALTER TABLE "Post" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'PUBLICADO',
+ADD COLUMN IF NOT EXISTS "classId" TEXT,
+ADD COLUMN IF NOT EXISTS "className" TEXT;
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "User_registration_key" ON "User"("registration");

@@ -4,12 +4,19 @@ const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   const { protocol, hostname } = window.location;
 
-  // Se estivermos no localhost ou IP de rede, vamos garantir a porta 5001
-  if (!envUrl || envUrl.includes(':5000') || envUrl.includes(':5001')) {
+  // Se estivermos em ambiente de desenvolvimento local (localhost ou IP local)
+  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.');
+  if (isLocal) {
     return `${protocol}//${hostname}:5001/api`;
   }
 
-  return envUrl;
+  // Em produção: se envUrl foi embutido no build e não é localhost, usa ele
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+
+  // Fallback para produção: se o frontend estiver em educonnect.exemplo.com, busca api.educonnect.exemplo.com/api
+  return `${protocol}//api.${hostname.replace(/^www\./, '')}/api`;
 };
 
 const API_URL = getApiUrl();
