@@ -4,7 +4,7 @@ import { hashPassword, generateToken, comparePassword } from '../utils/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 
 import { authMiddleware } from '../middleware/auth.js';
-import { validateSSOToken, verifyPortalCredentials, mapPortalRole, getOrCreateSchool, PortalUser } from '../utils/portal.js';
+import { validateSSOToken, verifyPortalCredentials, verifyStudentCredentials, mapPortalRole, getOrCreateSchool, PortalUser } from '../utils/portal.js';
 
 const router = Router();
 
@@ -130,6 +130,9 @@ router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res: Re
       bio: user.bio,
       school: user.school,
       schools: user.memberOfSchools,
+      registration: user.registration,
+      classId: user.classId,
+      className: user.className,
       verified: user.verified,
       stats: user._count
     });
@@ -194,13 +197,62 @@ router.post('/external/sso', async (req: AuthenticatedRequest, res: Response) =>
   }
 });
 
+// Student Direct Login (Matrícula + Código de Acesso da Turma)
+router.post('/student-login', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { registration, accessCode } = req.body;
+
+    if (!registration || !accessCode) {
+      throw new AppError('Matrícula e código da turma são obrigatórios', 400);
+    }
+
+    const studentData = await verifyStudentCredentials(registration, accessCode);
+    if (!studentData) {
+      throw new AppError('Matrícula ou código da turma inválido', 401);
+    }
+
+    const portalUser: PortalUser = {
+      email: studentData.email,
+      name: studentData.name,
+      role: 'ALUNO',
+      registration: studentData.registration,
+      classId: studentData.class?.id,
+      className: studentData.class?.name,
+      schoolName: studentData.school?.name,
+      schools: studentData.school ? [studentData.school] : []
+    };
+
+    const result = await processExternalLogin(portalUser);
+    res.json(result);
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: error.message || 'Falha ao autenticar estudante' });
+    }
+  }
+});
+
 /**
  * Shared logic for JIT provisioning and SSO login
  */
 async function processExternalLogin(portalUser: PortalUser) {
-  const { email, name, role, schoolName, schools } = portalUser;
+  const { email, name, role, schoolName, schools, registration, classId, className } = portalUser;
 
-  let user = await prisma.user.findUnique({ where: { email } });
+  // Locate user by registration (if provided) or by email
+  let user = null;
+  if (registration) {
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { registration },
+          { email }
+        ]
+      }
+    });
+  } else {
+    user = await prisma.user.findUnique({ where: { email } });
+  }
 
   // Handle both legacy schoolName (string) and new schools (array of objects)
   const incomingSchools = [
@@ -234,6 +286,9 @@ async function processExternalLogin(portalUser: PortalUser) {
         email,
         name,
         role: mappedRole,
+        registration: registration || null,
+        classId: classId || null,
+        className: className || null,
         password: hashedPassword,
         school: primarySchoolName, // Primary school string
         schoolId: validSchoolIds[0] || null,  // Primary school ID
@@ -244,14 +299,16 @@ async function processExternalLogin(portalUser: PortalUser) {
       }
     });
   } else {
-    // Update existing user with new school links and potentially new Role
+    // Update existing user with new school links and potentially new Role/Class
     const mappedRole = mapPortalRole(role);
     
-    await prisma.user.update({
+    user = await prisma.user.update({
       where: { id: user.id },
       data: {
-        role: mappedRole, // Allow role updates via Portal (e.g. Aluno -> EquipeEscolar)
-        // Only update primary schoolId if it was null
+        role: mappedRole,
+        registration: registration || user.registration || null,
+        classId: classId !== undefined ? classId : user.classId,
+        className: className !== undefined ? className : user.className,
         schoolId: user.schoolId || validSchoolIds[0] || null,
         school: user.school || primarySchoolName,
         memberOfSchools: {
@@ -264,13 +321,17 @@ async function processExternalLogin(portalUser: PortalUser) {
   const token = generateToken(user.id, user.role);
 
   return {
-    message: 'Login externo bem-sucedido',
+    message: 'Login realizado com sucesso',
     token,
     user: {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
+      registration: user.registration,
+      classId: user.classId,
+      className: user.className,
+      school: user.school
     }
   };
 }

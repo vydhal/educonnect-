@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI, notificationsAPI, socialAPI, getMediaUrl } from '../api';
+import { authAPI, notificationsAPI, socialAPI, moderationAPI, getMediaUrl } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
 import { IMAGES } from '../constants';
 import { BottomNavigation } from './BottomNavigation';
@@ -29,9 +29,14 @@ const GlobalPostModal: React.FC<{ onClose: () => void, children: React.ReactNode
     </div>
 );
 
-const NavIcon: React.FC<{ icon: string, label: string, active?: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => (
-    <button onClick={onClick} className={`flex flex-col items-center gap-1 group ${active ? 'text-primary' : 'text-gray-500 hover:text-primary transition-colors'}`}>
+const NavIcon: React.FC<{ icon: string, label: string, badge?: number, active?: boolean, onClick: () => void }> = ({ icon, label, badge, active, onClick }) => (
+    <button onClick={onClick} className={`flex flex-col items-center gap-1 group relative ${active ? 'text-primary' : 'text-gray-500 hover:text-primary transition-colors'}`}>
         <span className={`material-symbols-outlined ${active ? 'font-fill-1' : ''}`}>{icon}</span>
+        {badge !== undefined && badge > 0 && (
+            <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 bg-amber-500 text-white rounded-full text-[9px] font-black flex items-center justify-center shadow-sm">
+                {badge > 9 ? '9+' : badge}
+            </span>
+        )}
         <span className="text-[10px] font-bold">{label}</span>
     </button>
 );
@@ -42,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
     const [searchLocal, setSearchLocal] = useState('');
+    const [pendingModerationCount, setPendingModerationCount] = useState(0);
     const { settings } = useSettings();
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -68,6 +74,16 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                 .catch(err => console.error('Header failed to load profile', err));
         }
     }, [propUser]);
+
+    const canModerate = ['PROFESSOR', 'EQUIPE_ESCOLAR', 'ADMIN'].includes(user?.role?.toUpperCase());
+
+    useEffect(() => {
+        if (canModerate) {
+            moderationAPI.getStats()
+                .then(data => setPendingModerationCount(data?.pending || 0))
+                .catch(() => {});
+        }
+    }, [canModerate]);
 
     return (
         <>
@@ -106,6 +122,15 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onLogout, user: propU
                         <NavIcon icon="home" label="Início" active={activeTab === 'home'} onClick={() => navigate('/feed')} />
                         <NavIcon icon="group" label="Rede" active={activeTab === 'network'} onClick={() => navigate('/network')} />
                         <NavIcon icon="school" label="Projetos" active={activeTab === 'projects'} onClick={() => navigate('/projects')} />
+                        {canModerate && (
+                            <NavIcon 
+                                icon="verified_user" 
+                                label="Moderação" 
+                                badge={pendingModerationCount} 
+                                active={window.location.pathname.startsWith('/moderation')} 
+                                onClick={() => navigate('/moderation')} 
+                            />
+                        )}
                     </nav>
 
                     <div className="flex items-center gap-3 md:border-l md:pl-4">

@@ -19,6 +19,7 @@ import AdminSchoolsPage from './pages/AdminSchoolsPage';
 import AdminEventsPage from './pages/AdminEventsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import AdminModerationPage from './pages/AdminModerationPage';
+import TeacherModerationPage from './pages/TeacherModerationPage';
 import AdminSupportPage from './pages/AdminSupportPage';
 import { AdminBadgesPage } from './pages/AdminBadgesPage';
 import PostPage from './pages/PostPage';
@@ -45,6 +46,7 @@ const App: React.FC = () => {
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/post/:id" element={<PostPage />} />
+            <Route path="/moderation" element={<TeacherModerationPage />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="stats" element={<AdminDashboard />} />

@@ -194,7 +194,10 @@ const FeedPage: React.FC = () => {
     image: apiPost.image, // Legacy
     images: apiPost.images && apiPost.images.length > 0 ? apiPost.images : (apiPost.image ? [apiPost.image] : []),
     isVerified: apiPost.author.verified,
-    userReaction: apiPost.userReaction
+    userReaction: apiPost.userReaction,
+    status: apiPost.status || 'PUBLICADO',
+    className: apiPost.className || apiPost.author?.className,
+    moderation: apiPost.moderation
   });
 
   const fetchPosts = async (filters?: { tag?: string, search?: string }) => {
@@ -268,6 +271,13 @@ const FeedPage: React.FC = () => {
   const handlePostCreated = () => {
     setIsModalOpen(false);
     fetchPosts();
+    if (user?.role === 'ALUNO') {
+      showModal({
+        title: 'Publicação Enviada!',
+        message: 'Sua publicação foi enviada para o professor e entrará no mural público assim que for aprovada.',
+        type: 'info'
+      });
+    }
   };
 
   const handlePostUpdated = (updatedPost: any) => {
@@ -582,7 +592,12 @@ const FeedPage: React.FC = () => {
                         </h4>
                         {post.isVerified && <span className="material-symbols-outlined text-primary text-sm font-fill-1">verified</span>}
                       </div>
-                      <p className="text-[11px] text-gray-500">{post.authorTitle} • {post.timestamp}</p>
+                      <p className="text-[11px] text-gray-500">
+                        {post.authorTitle}
+                        {post.className && <span className="ml-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold text-[10px]">{post.className}</span>}
+                        <span className="mx-1">•</span>
+                        {post.timestamp}
+                      </p>
                     </div>
                   </div>
                   {user && (user.id === post.authorId || user.role === 'ADMIN') && (
@@ -604,6 +619,25 @@ const FeedPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* MODERATION STATUS BANNER FOR STUDENT AUTHOR */}
+                {post.status === 'PENDENTE' && (
+                  <div className="mx-4 mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2.5 font-medium shadow-sm">
+                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg shrink-0">hourglass_top</span>
+                    <div>
+                      <strong>Aguardando aprovação pedagógica:</strong> Esta publicação está em análise pelo seu professor e ainda não está visível para a comunidade.
+                    </div>
+                  </div>
+                )}
+                {post.status === 'REPROVADO' && (
+                  <div className="mx-4 mb-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-2.5 font-medium shadow-sm">
+                    <span className="material-symbols-outlined text-rose-600 dark:text-rose-400 text-lg shrink-0 mt-0.5">error</span>
+                    <div>
+                      <strong>Publicação não aprovada:</strong> {post.moderation?.reason || 'Não atende às diretrizes de convivência do ambiente escolar.'}
+                    </div>
+                  </div>
+                )}
+
                 <div className="px-4 pb-4">
                   <div className="text-sm leading-relaxed dark:text-gray-300 whitespace-pre-wrap">{renderContent(post.content)}</div>
                 </div>

@@ -21,6 +21,9 @@ export interface PortalUser {
   role: string;
   schoolName?: string;
   schools?: PortalSchool[];
+  registration?: string;
+  classId?: string;
+  className?: string;
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -81,6 +84,49 @@ export const verifyPortalCredentials = async (email: string, password: string): 
   } catch (error) {
     console.error('Error verifying portal credentials:', error);
     return null;
+  }
+};
+
+export interface StudentVerifyData {
+  registration: string;
+  name: string;
+  email: string;
+  role: string;
+  school: {
+    id: string;
+    name: string;
+    inep?: string;
+    address?: string;
+    zone?: string;
+  };
+  class: {
+    id: string;
+    name: string;
+    grade?: string;
+  };
+}
+
+export const verifyStudentCredentials = async (registration: string, accessCode: string): Promise<StudentVerifyData | null> => {
+  try {
+    if (!PORTAL_API_URL || !PORTAL_API_KEY) {
+      console.error('Portal API configuration missing');
+      return null;
+    }
+
+    const response = await axios.post(`${PORTAL_API_URL}/api/auth/external/student-verify`, {
+      registration,
+      accessCode,
+      apiKey: PORTAL_API_KEY
+    });
+
+    if (response.data.success && response.data.student) {
+      return response.data.student;
+    }
+    return null;
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error.message;
+    console.error('Error verifying student credentials:', errorMsg);
+    throw new Error(errorMsg || 'Erro ao validar matrícula e código da turma');
   }
 };
 

@@ -26,6 +26,9 @@ model User {
   zone                  String?
   schoolId              String?
   schoolType            String?
+  registration          String?           @unique
+  classId               String?
+  className             String?
   badgesGiven           Badge[]           @relation("badgeGiver")
   badgesReceived        Badge[]           @relation("badgeReceiver")
   comments              Comment[]
@@ -104,6 +107,9 @@ model Post {
   updatedAt  DateTime        @updatedAt
   images     String[]
   tags       String[]        @default([])
+  status     String          @default("PUBLICADO")
+  classId    String?
+  className  String?
   comments   Comment[]
   likes      Like[]
   moderation ModerationItem?

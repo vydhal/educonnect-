@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express, { Express } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { prisma } from './prisma/client.js';
 import authRoutes from './routes/auth.routes.js';
 import postRoutes from './routes/post.routes.js';
@@ -17,8 +17,6 @@ import badgeTypesRoutes from './routes/badgetypes.routes.js';
 import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler.js';
-
-dotenv.config();
 
 const app: Express = express();
 app.enable('trust proxy');

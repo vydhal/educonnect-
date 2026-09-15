@@ -27,11 +27,14 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     // Extract hashtags
     const tags = content ? (content.match(/#[\w\u00C0-\u00FF]+/g) || []).map((tag: string) => tag.substring(1)) : [];
 
-    // Fetch author to get schoolId
+    // Fetch author to get schoolId, role, classId, className
     const author = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { schoolId: true }
+      select: { schoolId: true, role: true, classId: true, className: true, school: true }
     });
+
+    const isStudent = author?.role === 'ALUNO';
+    const postStatus = isStudent ? 'PENDENTE' : 'PUBLICADO';
 
     const post = await prisma.post.create({
       data: {
@@ -40,17 +43,31 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
         images: imageList,
         authorId: req.userId,
         schoolId: author?.schoolId,
+        classId: author?.classId || null,
+        className: author?.className || null,
+        status: postStatus,
         tags
       },
       include: {
         author: {
-          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true }
+          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true, className: true }
         },
         _count: {
           select: { comments: true, likes: true }
         }
       }
     });
+
+    // If student post, automatically create ModerationItem
+    if (isStudent) {
+      await prisma.moderationItem.create({
+        data: {
+          postId: post.id,
+          status: 'PENDENTE',
+          reason: 'Aguardando aprovação pedagógica do professor'
+        }
+      });
+    }
 
     // Create MENTION notifications for @[Name](id) patterns
     if (content) {
@@ -164,11 +181,29 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
       ];
     }
 
+    // Status filter: Only PUBLICADO or posts authored by current user (so author can see their own pending posts)
+    if (req.userId) {
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { status: 'PUBLICADO' },
+            { authorId: req.userId }
+          ]
+        }
+      ];
+    } else {
+      where.status = 'PUBLICADO';
+    }
+
     const posts = await prisma.post.findMany({
       where,
       include: {
         author: {
-          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true }
+          select: { id: true, name: true, avatar: true, role: true, verified: true, school: true, className: true }
+        },
+        moderation: {
+          select: { id: true, status: true, reason: true }
         },
         _count: {
           select: { comments: true, likes: true }

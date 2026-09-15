@@ -124,6 +124,11 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ token })
     }),
+  studentLogin: (data: { registration: string; accessCode: string }) =>
+    request('/auth/student-login', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
 };
 
 // Posts API
@@ -205,7 +210,16 @@ export const usersAPI = {
 
 // Moderation API
 export const moderationAPI = {
-  getItems: () => request('/moderation'),
+  getItems: (params?: { status?: string; classId?: string; search?: string }) => {
+    if (!params) return request('/moderation');
+    const searchParams = new URLSearchParams();
+    if (params.status) searchParams.append('status', params.status);
+    if (params.classId) searchParams.append('classId', params.classId);
+    if (params.search) searchParams.append('search', params.search);
+    const queryString = searchParams.toString();
+    return request(`/moderation${queryString ? `?${queryString}` : ''}`);
+  },
+  getStats: () => request('/moderation/stats'),
   flagPost: (postId: string, reason: string) =>
     request(`/moderation/flag/${postId}`, {
       method: 'POST',
@@ -215,7 +229,7 @@ export const moderationAPI = {
     request(`/moderation/${id}/approve`, {
       method: 'PUT',
     }),
-  rejectItem: (id: string, data: { reason?: string; deletePost?: boolean }) =>
+  rejectItem: (id: string, data: { reason?: string; deletePost?: boolean } = {}) =>
     request(`/moderation/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify(data),

@@ -1,19 +1,30 @@
-
-export type UserRole = 'PROFESSOR' | 'ALUNO' | 'ESCOLA' | 'COMUNIDADE' | 'ADMIN' | 'GESTOR' | 'COORDENADOR' | 'SUPERVISOR';
+export type UserRole = 'PROFESSOR' | 'ALUNO' | 'ESCOLA' | 'COMUNIDADE' | 'ADMIN' | 'GESTOR' | 'COORDENADOR' | 'SUPERVISOR' | 'EQUIPE_ESCOLAR';
 
 export interface Post {
   id: string;
   author: string;
   authorId: string;
-  authorTitle: string;
-  authorAvatar: string;
+  authorTitle?: string;
+  authorAvatar?: string;
   content: string;
-  timestamp: string;
+  timestamp?: string;
+  createdAt?: string;
+  updatedAt?: string;
   likes: number;
   comments: number;
-  shares: number;
+  commentsCount?: number;
+  shares?: number;
   image?: string;
+  images?: string[];
   isVerified?: boolean;
+  status?: 'PUBLICADO' | 'PENDENTE' | 'REPROVADO';
+  classId?: string;
+  className?: string;
+  moderation?: {
+    id: string;
+    status: 'PENDENTE' | 'APROVADO' | 'REPROVADO';
+    reason?: string;
+  };
 }
 
 export interface Comment {
@@ -29,11 +40,24 @@ export interface Comment {
 
 export interface ModerationItem {
   id: string;
+  postId?: string;
   author: string;
+  authorId?: string;
+  authorAvatar?: string;
+  authorRole?: string;
   school: string;
+  className?: string;
+  registration?: string;
   date: string;
   contentPreview: string;
+  images?: string[];
   status: 'PENDENTE' | 'APROVADO' | 'REPROVADO';
+  reason?: string;
+  moderatorName?: string;
+  post?: any;
+  moderator?: any;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface User {
@@ -45,5 +69,8 @@ export interface User {
   school?: string;
   schools?: { id: string, name: string }[];
   schoolId?: string;
+  registration?: string;
+  classId?: string;
+  className?: string;
   createdAt?: string;
 }
