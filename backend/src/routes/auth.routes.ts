@@ -5,6 +5,7 @@ import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 
 import { authMiddleware } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import { logAuditEvent } from '../utils/audit.js';
 import { validateSSOToken, verifyPortalCredentials, verifyStudentCredentials, mapPortalRole, getOrCreateSchool, PortalUser } from '../utils/portal.js';
 
 const router = Router();
@@ -13,6 +14,13 @@ const router = Router();
 router.post('/register', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (process.env.ALLOW_PUBLIC_REGISTRATION !== 'true') {
+      logAuditEvent({
+        action: 'REGISTER_BLOCKED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        userEmail: req.body?.email,
+        details: 'Tentativa de auto-registro bloqueada por política de segurança'
+      }, req);
       throw new AppError('Auto-registro público desabilitado. Utilize a autenticação institucional do Portal EduCampina.', 403);
     }
 
@@ -46,6 +54,17 @@ router.post('/register', authLimiter, async (req: AuthenticatedRequest, res: Res
 
     const token = generateToken(user.id, user.role);
 
+    logAuditEvent({
+      action: 'REGISTER_SUCCESS',
+      category: 'USUARIO',
+      status: 'SUCESSO',
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      userEmail: user.email,
+      details: 'Usuário registrado localmente'
+    }, req);
+
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -56,9 +75,9 @@ router.post('/register', authLimiter, async (req: AuthenticatedRequest, res: Res
         role: user.role
       }
     });
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message });
+  } catch (error: any) {
+    if (error instanceof AppError || error.statusCode) {
+      res.status(error.statusCode || 400).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -76,15 +95,43 @@ router.post('/login', authLimiter, async (req: AuthenticatedRequest, res: Respon
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      logAuditEvent({
+        action: 'LOGIN_FAILED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        userEmail: email,
+        details: 'Tentativa de login com email não cadastrado'
+      }, req);
       throw new AppError('Invalid credentials', 401);
     }
 
     const passwordMatch = await comparePassword(password, user.password);
     if (!passwordMatch) {
+      logAuditEvent({
+        action: 'LOGIN_FAILED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        userId: user.id,
+        userName: user.name,
+        userRole: user.role,
+        userEmail: user.email,
+        details: 'Senha incorreta'
+      }, req);
       throw new AppError('Invalid credentials', 401);
     }
 
     const token = generateToken(user.id, user.role);
+
+    logAuditEvent({
+      action: 'LOGIN_DIRECT',
+      category: 'ACESSO',
+      status: 'SUCESSO',
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      userEmail: user.email,
+      details: 'Autenticação direta com credenciais locais'
+    }, req);
 
     res.json({
       message: 'Login successful',
@@ -96,9 +143,9 @@ router.post('/login', authLimiter, async (req: AuthenticatedRequest, res: Respon
         role: user.role
       }
     });
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message });
+  } catch (error: any) {
+    if (error instanceof AppError || error.statusCode) {
+      res.status(error.statusCode || 400).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -164,15 +211,35 @@ router.post('/external/login', authLimiter, async (req: AuthenticatedRequest, re
 
     const portalUser = await verifyPortalCredentials(email, password);
     if (!portalUser) {
+      logAuditEvent({
+        action: 'LOGIN_PORTAL_FAILED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        userEmail: email,
+        details: 'Credenciais inválidas no Portal EduCampina'
+      }, req);
       throw new AppError('Credenciais inválidas no Portal', 401);
     }
 
     // Process Login/JIT using shared logic
     const result = await processExternalLogin(portalUser);
+
+    logAuditEvent({
+      action: 'LOGIN_PORTAL_VERIFY',
+      category: 'ACESSO',
+      status: 'SUCESSO',
+      userId: result.user.id,
+      userName: result.user.name,
+      userRole: result.user.role,
+      userEmail: result.user.email,
+      schoolName: result.user.school,
+      details: 'Login de servidor autenticado via EduCampina'
+    }, req);
+
     res.json(result);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message });
+  } catch (error: any) {
+    if (error instanceof AppError || error.statusCode) {
+      res.status(error.statusCode || 400).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -190,15 +257,34 @@ router.post('/external/sso', authLimiter, async (req: AuthenticatedRequest, res:
 
     const portalUser = validateSSOToken(token);
     if (!portalUser) {
+      logAuditEvent({
+        action: 'LOGIN_SSO_FAILED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        details: 'Token SSO inválido ou expirado'
+      }, req);
       throw new AppError('Token SSO inválido ou expirado', 401);
     }
 
     // Process Login/JIT using shared logic
     const result = await processExternalLogin(portalUser);
+
+    logAuditEvent({
+      action: 'LOGIN_PORTAL_SSO',
+      category: 'ACESSO',
+      status: 'SUCESSO',
+      userId: result.user.id,
+      userName: result.user.name,
+      userRole: result.user.role,
+      userEmail: result.user.email,
+      schoolName: result.user.school,
+      details: 'Login via Token SSO do Portal EduCampina'
+    }, req);
+
     res.json(result);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message });
+  } catch (error: any) {
+    if (error instanceof AppError || error.statusCode) {
+      res.status(error.statusCode || 400).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -216,6 +302,13 @@ router.post('/student-login', authLimiter, async (req: AuthenticatedRequest, res
 
     const studentData = await verifyStudentCredentials(registration, accessCode);
     if (!studentData) {
+      logAuditEvent({
+        action: 'LOGIN_STUDENT_FAILED',
+        category: 'ACESSO',
+        status: 'FALHA',
+        registration: registration,
+        details: 'Matrícula ou código de turma inválido'
+      }, req);
       throw new AppError('Matrícula ou código da turma inválido', 401);
     }
 
@@ -239,10 +332,25 @@ router.post('/student-login', authLimiter, async (req: AuthenticatedRequest, res
     };
 
     const result = await processExternalLogin(portalUser);
+
+    logAuditEvent({
+      action: 'LOGIN_STUDENT',
+      category: 'ACESSO',
+      status: 'SUCESSO',
+      userId: result.user.id,
+      userName: result.user.name,
+      userRole: result.user.role,
+      registration: result.user.registration,
+      classId: result.user.classId,
+      className: result.user.className,
+      schoolName: result.user.school,
+      details: `Acesso autenticado na turma ${result.user.className || 'Padrão'}`
+    }, req);
+
     res.json(result);
   } catch (error: any) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message });
+    if (error instanceof AppError || error.statusCode) {
+      res.status(error.statusCode || 400).json({ error: error.message });
     } else {
       res.status(400).json({ error: error.message || 'Falha ao autenticar estudante' });
     }

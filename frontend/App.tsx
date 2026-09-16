@@ -14,6 +14,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import AdminAuditLogsPage from './pages/AdminAuditLogsPage';
 import AdminLayout from './components/AdminLayout';
 import AdminSchoolsPage from './pages/AdminSchoolsPage';
 import AdminEventsPage from './pages/AdminEventsPage';
@@ -55,6 +56,7 @@ const App: React.FC = () => {
               <Route path="schools" element={<AdminSchoolsPage />} />
               <Route path="events" element={<AdminEventsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="logs" element={<AdminAuditLogsPage />} />
               <Route path="moderation" element={<AdminModerationPage />} />
               <Route path="support" element={<AdminSupportPage />} />
               <Route path="badges" element={<AdminBadgesPage />} />

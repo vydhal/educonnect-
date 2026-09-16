@@ -57,6 +57,7 @@ model User {
   following             UserFollow[]      @relation("follower")
   followers             UserFollow[]      @relation("following")
   postsInSchool        Post[]            @relation("SchoolPosts")
+  auditLogs             AuditLog[]
 }
 
 model Notification {
@@ -281,4 +282,34 @@ model SupportItem {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String   // e.g. LOGIN_SUCCESS, STUDENT_LOGIN, LOGIN_FAILED, POST_CREATED, POST_APPROVED, POST_REJECTED, SETTINGS_UPDATED, LOGS_PURGED
+  category     String   // ACESSO, POSTAGEM, MODERACAO, SISTEMA, USUARIO
+  status       String   // SUCESSO, FALHA, PENDENTE, APROVADO, REPROVADO
+  userId       String?
+  userName     String?
+  userRole     String?
+  userEmail    String?
+  registration String?
+  classId      String?
+  className    String?
+  schoolId     String?
+  schoolName   String?
+  ipAddress    String?
+  userAgent    String?
+  details      String?  // JSON string or extra info
+  targetId     String?  // Target entity ID (postId, userId, etc.)
+  targetType   String?  // POST, USER, SETTING, MODERATION
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([action])
+  @@index([createdAt])
+  @@index([schoolId])
+  @@index([userId])
 }

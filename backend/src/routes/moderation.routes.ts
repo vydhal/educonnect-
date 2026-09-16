@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { prisma } from '../prisma/client.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
+import { logAuditEvent } from '../utils/audit.js';
 
 const router = Router();
 
@@ -247,6 +248,25 @@ router.put('/:id/approve', authMiddleware, moderatorMiddleware, async (req: Auth
       }).catch(err => console.error('Failed to notify student:', err));
     }
 
+    // 4. Audit log for moderation approval
+    logAuditEvent({
+      action: 'POST_APPROVED',
+      category: 'MODERACAO',
+      status: 'APROVADO',
+      userId: req.userId,
+      userName: moderation.moderator?.name || req.userName || null,
+      userRole: req.userRole || null,
+      schoolId: (moderation.post as any)?.schoolId || null,
+      targetId: moderation.postId,
+      targetType: 'POST',
+      details: {
+        moderationId: moderation.id,
+        authorId: moderation.post?.authorId,
+        authorName: (moderation.post as any)?.author?.name,
+        originalReason: currentItem.reason
+      }
+    }, req);
+
     res.json(moderation);
   } catch (error) {
     if (error instanceof AppError) {
@@ -321,6 +341,26 @@ router.put('/:id/reject', authMiddleware, moderatorMiddleware, async (req: Authe
         }
       }).catch(err => console.error('Failed to notify student:', err));
     }
+
+    // 4. Audit log for moderation rejection
+    logAuditEvent({
+      action: 'POST_REJECTED',
+      category: 'MODERACAO',
+      status: 'REPROVADO',
+      userId: req.userId,
+      userName: moderation.moderator?.name || req.userName || null,
+      userRole: req.userRole || null,
+      schoolId: (moderation.post as any)?.schoolId || null,
+      targetId: moderation.postId,
+      targetType: 'POST',
+      details: {
+        moderationId: moderation.id,
+        authorId: moderation.post?.authorId,
+        authorName: (moderation.post as any)?.author?.name,
+        reason: reason || 'Conteúdo não aprovado na moderação pedagógica',
+        deletedPost: !!deletePost
+      }
+    }, req);
 
     res.json(moderation);
   } catch (error) {

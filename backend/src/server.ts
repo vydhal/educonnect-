@@ -15,6 +15,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import badgeTypesRoutes from './routes/badgetypes.routes.js';
 import externalRoutes from './routes/external.routes.js';
+import auditRoutes from './routes/audit.routes.js';
 import path from 'path';
 
 import helmet from 'helmet';
@@ -84,6 +85,7 @@ app.use('/api/social', socialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/external', externalRoutes);
+app.use('/api/admin/audit-logs', auditRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

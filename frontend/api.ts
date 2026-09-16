@@ -443,3 +443,75 @@ export const externalAPI = {
         });
     }
 };
+
+// Audit Logs API
+export const auditAPI = {
+  getLogs: (params: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    status?: string;
+    search?: string;
+    schoolId?: string;
+    startDate?: string;
+    endDate?: string;
+  } = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.category) query.append('category', params.category);
+    if (params.status) query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    if (params.schoolId) query.append('schoolId', params.schoolId);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    return request(`/admin/audit-logs${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getStats: () => request('/admin/audit-logs/stats'),
+
+  exportCSV: async (params: { period?: string; category?: string; status?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.period) query.append('period', params.period);
+    if (params.category) query.append('category', params.category);
+    if (params.status) query.append('status', params.status);
+
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_URL}/admin/audit-logs/export?${query.toString()}`, {
+      headers
+    });
+
+    if (!res.ok) {
+      throw new Error(`Falha ao exportar CSV (${res.status})`);
+    }
+
+    const blob = await res.blob();
+    const disposition = res.headers.get('content-disposition');
+    let filename = `audit_logs_${params.period || 'export'}_${new Date().toISOString().split('T')[0]}.csv`;
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) filename = match[1];
+    }
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
+    return filename;
+  },
+
+  purgeLogs: (olderThanMonths: number) => {
+    return request(`/admin/audit-logs/purge?olderThanMonths=${olderThanMonths}`, {
+      method: 'DELETE'
+    });
+  }
+};
+

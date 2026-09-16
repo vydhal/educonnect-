@@ -74,6 +74,7 @@ const AdminLayout: React.FC = () => {
                     <SidebarItem icon="school" label="Escolas" path="/admin/schools" active={isActive('/admin/schools')} onClick={closeSidebar} />
                     <SidebarItem icon="calendar_month" label="Eventos" path="/admin/events" active={isActive('/admin/events')} onClick={closeSidebar} />
                     <SidebarItem icon="assessment" label="Relatórios" path="/admin/reports" active={isActive('/admin/reports')} onClick={closeSidebar} />
+                    <SidebarItem icon="receipt_long" label="Auditoria" path="/admin/logs" active={isActive('/admin/logs')} onClick={closeSidebar} />
                     <SidebarItem icon="settings" label="Configurações" path="/admin/settings" active={isActive('/admin/settings')} onClick={closeSidebar} />
                 </nav>
 

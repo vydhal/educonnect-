@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../prisma/client.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
+import { logAuditEvent } from '../utils/audit.js';
 
 const router = Router();
 
@@ -27,10 +28,10 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     // Extract hashtags
     const tags = content ? (content.match(/#[\w\u00C0-\u00FF]+/g) || []).map((tag: string) => tag.substring(1)) : [];
 
-    // Fetch author to get schoolId, role, classId, className
+    // Fetch author to get schoolId, role, classId, className, name, email, registration
     const author = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { schoolId: true, role: true, classId: true, className: true, school: true }
+      select: { schoolId: true, role: true, classId: true, className: true, school: true, name: true, email: true, registration: true }
     });
 
     const isStudent = author?.role === 'ALUNO';
@@ -91,6 +92,29 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
       }
     }
 
+    // Audit log for post creation
+    logAuditEvent({
+      action: isStudent ? 'POST_CREATED_PENDING' : 'POST_CREATED_PUBLISHED',
+      category: 'POSTAGEM',
+      status: isStudent ? 'PENDENTE' : 'SUCESSO',
+      userId: req.userId,
+      userName: author?.name || req.userName || null,
+      userRole: author?.role || req.userRole || null,
+      userEmail: author?.email || null,
+      registration: (author as any)?.registration || null,
+      classId: author?.classId || null,
+      className: author?.className || null,
+      schoolId: author?.schoolId || null,
+      schoolName: (author as any)?.school || null,
+      targetId: post.id,
+      targetType: 'POST',
+      details: {
+        contentPreview: content ? content.slice(0, 100) : '',
+        imagesCount: imageList.length,
+        tags
+      }
+    }, req);
+
     res.status(201).json(post);
   } catch (error) {
     if (error instanceof AppError) {
@@ -149,6 +173,22 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
         }
       }
     });
+
+    // Audit log for post update
+    logAuditEvent({
+      action: 'POST_UPDATED',
+      category: 'POSTAGEM',
+      status: 'SUCESSO',
+      userId: req.userId,
+      userName: req.userName || null,
+      userRole: req.userRole || null,
+      schoolId: post.schoolId || null,
+      targetId: post.id,
+      targetType: 'POST',
+      details: {
+        contentPreview: content ? content.slice(0, 100) : ''
+      }
+    }, req);
 
     res.json(updatedPost);
   } catch (error) {
@@ -419,6 +459,24 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Res
     await prisma.post.delete({
       where: { id: req.params.id }
     });
+
+    // Audit log for post deletion
+    logAuditEvent({
+      action: 'POST_DELETED',
+      category: 'POSTAGEM',
+      status: 'SUCESSO',
+      userId: req.userId,
+      userName: req.userName || null,
+      userRole: req.userRole || null,
+      schoolId: post.schoolId || null,
+      targetId: post.id,
+      targetType: 'POST',
+      details: {
+        deletedByRole: req.userRole,
+        authorId: post.authorId,
+        contentPreview: post.content ? post.content.slice(0, 100) : ''
+      }
+    }, req);
 
     res.json({ message: 'Post deleted' });
   } catch (error) {

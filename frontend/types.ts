@@ -74,3 +74,32 @@ export interface User {
   className?: string;
   createdAt?: string;
 }
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  category: 'ACESSO' | 'POSTAGEM' | 'MODERACAO' | 'SISTEMA' | 'USUARIO';
+  status: 'SUCESSO' | 'FALHA' | 'PENDENTE' | 'APROVADO' | 'REPROVADO';
+  userId?: string | null;
+  userName?: string | null;
+  userRole?: string | null;
+  userEmail?: string | null;
+  registration?: string | null;
+  classId?: string | null;
+  className?: string | null;
+  schoolId?: string | null;
+  schoolName?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  details?: string | null;
+  targetId?: string | null;
+  targetType?: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
+}
+
