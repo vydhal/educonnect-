@@ -14,6 +14,7 @@ import socialRoutes from './routes/social.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import badgeTypesRoutes from './routes/badgetypes.routes.js';
+import externalRoutes from './routes/external.routes.js';
 import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler.js';
@@ -63,6 +64,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/external', externalRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

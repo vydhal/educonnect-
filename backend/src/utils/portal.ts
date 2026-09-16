@@ -133,46 +133,91 @@ export const verifyStudentCredentials = async (registration: string, accessCode:
 export const getOrCreateSchool = async (schoolData: PortalSchool | string) => {
   if (!schoolData) return null;
 
-  const name = typeof schoolData === 'string' ? schoolData : schoolData.name;
-  const inep = typeof schoolData === 'string' ? undefined : schoolData.inep;
+  const rawName = typeof schoolData === 'string' ? schoolData : (schoolData.name || '');
+  const name = rawName.trim();
+  if (!name) return null;
 
-  // Try to find school by INEP or Name (Role ESCOLA)
+  const inep = typeof schoolData === 'string' ? undefined : (schoolData.inep ? String(schoolData.inep).trim() : undefined);
+
+  // Normalização do slug para o email da escola (remove acentos e caracteres especiais)
+  const emailSlug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '');
+
+  const candidateEmail = `escola.${emailSlug}@educampina.local`;
+
+  // 1. Tenta encontrar a escola por:
+  // - INEP (se fornecido)
+  // - Email da escola gerado
+  // - Nome (case-insensitive)
   let school = await prisma.user.findFirst({
     where: {
       OR: [
         ...(inep ? [{ inep: { equals: inep } }] : []),
+        { email: candidateEmail },
         { name: { equals: name, mode: 'insensitive' } }
-      ],
-      role: 'ESCOLA'
+      ]
     }
   });
 
   if (!school) {
-    // Create new school unit with metadata
-    school = await prisma.user.create({
-      data: {
-        email: `escola.${name.toLowerCase().replace(/\s+/g, '.')}@educampina.local`,
-        password: 'EXTERNAL_SSO_PLACEHOLDER',
-        name: name,
-        role: 'ESCOLA',
-        verified: true,
-        inep: inep || null,
-        address: typeof schoolData === 'string' ? null : schoolData.address || null,
-        zone: typeof schoolData === 'string' ? null : schoolData.zone || null,
-        schoolType: typeof schoolData === 'string' ? 'Municipal' : schoolData.schoolType || 'Municipal'
+    try {
+      // Create new school unit with metadata
+      school = await prisma.user.create({
+        data: {
+          email: candidateEmail,
+          password: 'EXTERNAL_SSO_PLACEHOLDER',
+          name: name,
+          role: 'ESCOLA',
+          verified: true,
+          inep: inep || null,
+          address: typeof schoolData === 'string' ? null : schoolData.address || null,
+          zone: typeof schoolData === 'string' ? null : schoolData.zone || null,
+          schoolType: typeof schoolData === 'string' ? 'Municipal' : schoolData.schoolType || 'Municipal'
+        }
+      });
+    } catch (err) {
+      // Se houver colisão de concorrência ou email já existente
+      school = await prisma.user.findUnique({
+        where: { email: candidateEmail }
+      });
+
+      if (!school) {
+        // Fallback garantido com identificador único para nunca falhar constraint
+        school = await prisma.user.create({
+          data: {
+            email: `escola.${emailSlug}.${Date.now()}@educampina.local`,
+            password: 'EXTERNAL_SSO_PLACEHOLDER',
+            name: name,
+            role: 'ESCOLA',
+            verified: true,
+            inep: inep || null,
+            address: typeof schoolData === 'string' ? null : schoolData.address || null,
+            zone: typeof schoolData === 'string' ? null : schoolData.zone || null,
+            schoolType: typeof schoolData === 'string' ? 'Municipal' : schoolData.schoolType || 'Municipal'
+          }
+        });
       }
-    });
-  } else if (typeof schoolData !== 'string') {
-    // Update existing school with metadata if missing
-    await prisma.user.update({
-      where: { id: school.id },
-      data: {
-        inep: school.inep || schoolData.inep || null,
-        address: school.address || schoolData.address || null,
-        zone: school.zone || schoolData.zone || null,
-        schoolType: school.schoolType || schoolData.schoolType || 'Municipal'
-      }
-    });
+    }
+  } else {
+    // Atualiza metadados se necessário
+    const updates: any = {};
+    if (inep && !school.inep) updates.inep = inep;
+    if (school.role !== 'ESCOLA') updates.role = 'ESCOLA';
+    if (typeof schoolData !== 'string') {
+      if (schoolData.address && !school.address) updates.address = schoolData.address;
+      if (schoolData.zone && !school.zone) updates.zone = schoolData.zone;
+      if (schoolData.schoolType && !school.schoolType) updates.schoolType = schoolData.schoolType;
+    }
+    if (Object.keys(updates).length > 0) {
+      school = await prisma.user.update({
+        where: { id: school.id },
+        data: updates
+      });
+    }
   }
 
   return school;

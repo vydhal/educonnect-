@@ -211,11 +211,19 @@ router.post('/student-login', async (req: AuthenticatedRequest, res: Response) =
       throw new AppError('Matrícula ou código da turma inválido', 401);
     }
 
+    // Estudantes não possuem dados de email no EduCampina.
+    // A vinculação é feita exclusivamente pela matrícula.
+    // Geramos um email determinístico baseado na matrícula para atender à constraint UNIQUE do banco.
+    const cleanRegistration = String(studentData.registration || registration).trim();
+    const studentEmail = (studentData.email && studentData.email.trim())
+      ? studentData.email.trim().toLowerCase()
+      : `aluno.${cleanRegistration}@educampina.local`;
+
     const portalUser: PortalUser = {
-      email: studentData.email,
+      email: studentEmail,
       name: studentData.name,
       role: 'ALUNO',
-      registration: studentData.registration,
+      registration: cleanRegistration,
       classId: studentData.class?.id,
       className: studentData.class?.name,
       schoolName: studentData.school?.name,
@@ -239,19 +247,20 @@ router.post('/student-login', async (req: AuthenticatedRequest, res: Response) =
 async function processExternalLogin(portalUser: PortalUser) {
   const { email, name, role, schoolName, schools, registration, classId, className } = portalUser;
 
-  // Locate user by registration (if provided) or by email
+  const cleanRegistration = registration ? String(registration).trim() : null;
+  const userEmail = email ? email.trim().toLowerCase() : (cleanRegistration ? `aluno.${cleanRegistration}@educampina.local` : null);
+
+  // Para estudantes ou usuários com matrícula: a busca prioritária e soberana é a MATRÍCULA!
   let user = null;
-  if (registration) {
+  if (cleanRegistration) {
     user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { registration },
-          { email }
-        ]
-      }
+      where: { registration: cleanRegistration }
     });
-  } else {
-    user = await prisma.user.findUnique({ where: { email } });
+  }
+
+  // Se não achou por matrícula e temos email, busca por email
+  if (!user && userEmail) {
+    user = await prisma.user.findUnique({ where: { email: userEmail } });
   }
 
   // Handle both legacy schoolName (string) and new schools (array of objects)
@@ -263,8 +272,8 @@ async function processExternalLogin(portalUser: PortalUser) {
   // Deduplicate by INEP (if available) or Name
   const seen = new Set<string>();
   const schoolsToProcess = incomingSchools.filter(s => {
-    const key = (s.inep || s.name).toLowerCase();
-    if (seen.has(key)) return false;
+    const key = (s.inep || s.name || '').toLowerCase().trim();
+    if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
   });
@@ -280,24 +289,49 @@ async function processExternalLogin(portalUser: PortalUser) {
   if (!user) {
     const mappedRole = mapPortalRole(role);
     const hashedPassword = await hashPassword('EXTERNAL_SSO_' + Math.random().toString(36).substring(7));
+    const finalEmail = userEmail || (cleanRegistration ? `aluno.${cleanRegistration}@educampina.local` : `user.${Date.now()}@educampina.local`);
 
-    user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        role: mappedRole,
-        registration: registration || null,
-        classId: classId || null,
-        className: className || null,
-        password: hashedPassword,
-        school: primarySchoolName, // Primary school string
-        schoolId: validSchoolIds[0] || null,  // Primary school ID
-        verified: true,
-        memberOfSchools: {
-          connect: validSchoolIds.map(id => ({ id }))
+    try {
+      user = await prisma.user.create({
+        data: {
+          email: finalEmail,
+          name,
+          role: mappedRole,
+          registration: cleanRegistration,
+          classId: classId || null,
+          className: className || null,
+          password: hashedPassword,
+          school: primarySchoolName, // Primary school string
+          schoolId: validSchoolIds[0] || null,  // Primary school ID
+          verified: true,
+          memberOfSchools: {
+            connect: validSchoolIds.map(id => ({ id }))
+          }
         }
+      });
+    } catch (err) {
+      // Se ocorreu colisão de email concorrente, busca o usuário existente e vincula a matrícula
+      const existingUser = await prisma.user.findUnique({ where: { email: finalEmail } });
+      if (existingUser) {
+        user = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: name || existingUser.name,
+            role: mappedRole,
+            registration: cleanRegistration || existingUser.registration,
+            classId: classId || existingUser.classId,
+            className: className || existingUser.className,
+            school: primarySchoolName || existingUser.school,
+            schoolId: validSchoolIds[0] || existingUser.schoolId,
+            memberOfSchools: {
+              set: validSchoolIds.map(id => ({ id }))
+            }
+          }
+        });
+      } else {
+        throw err;
       }
-    });
+    }
   } else {
     // Update existing user with new school links and potentially new Role/Class
     const mappedRole = mapPortalRole(role);
@@ -306,7 +340,8 @@ async function processExternalLogin(portalUser: PortalUser) {
       where: { id: user.id },
       data: {
         role: mappedRole,
-        registration: registration || user.registration || null,
+        name: name || user.name,
+        registration: cleanRegistration || user.registration || null,
         classId: classId !== undefined ? classId : user.classId,
         className: className !== undefined ? className : user.className,
         schoolId: user.schoolId || validSchoolIds[0] || null,
