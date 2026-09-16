@@ -75,6 +75,8 @@ export const verifyPortalCredentials = async (email: string, password: string): 
       email,
       password,
       apiKey: PORTAL_API_KEY
+    }, {
+      timeout: 5000 // 5s timeout de proteção contra socket hang / negação de serviço
     });
 
     if (response.data.success) {
@@ -117,6 +119,8 @@ export const verifyStudentCredentials = async (registration: string, accessCode:
       registration,
       accessCode,
       apiKey: PORTAL_API_KEY
+    }, {
+      timeout: 5000 // 5s timeout de proteção contra socket hang / negação de serviço
     });
 
     if (response.data.success && response.data.student) {

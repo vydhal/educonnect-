@@ -4,19 +4,27 @@ import { hashPassword, generateToken, comparePassword } from '../utils/auth.js';
 import { AuthenticatedRequest, AppError } from '../middleware/errorHandler.js';
 
 import { authMiddleware } from '../middleware/auth.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 import { validateSSOToken, verifyPortalCredentials, verifyStudentCredentials, mapPortalRole, getOrCreateSchool, PortalUser } from '../utils/portal.js';
 
 const router = Router();
 
-// ... existing code ...
-
-// Register
-router.post('/register', async (req: AuthenticatedRequest, res: Response) => {
+// Register (Bloqueado por padrão em produção para prevenir criação desautorizada de contas)
+router.post('/register', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (process.env.ALLOW_PUBLIC_REGISTRATION !== 'true') {
+      throw new AppError('Auto-registro público desabilitado. Utilize a autenticação institucional do Portal EduCampina.', 403);
+    }
+
     const { email, password, name, role, schoolId } = req.body;
 
     if (!email || !password || !name || !role) {
       throw new AppError('Missing required fields', 400);
+    }
+
+    // Impede criação de contas administrativas ou especiais via auto-registro
+    if (role === 'ADMIN' || role === 'SEDUC') {
+      throw new AppError('Criação de contas administrativas não permitida por este canal', 403);
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -58,7 +66,7 @@ router.post('/register', async (req: AuthenticatedRequest, res: Response) => {
 });
 
 // Login
-router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/login', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -146,7 +154,7 @@ router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res: Re
 });
 
 // External Portal Manual Verify
-router.post('/external/login', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/external/login', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -172,7 +180,7 @@ router.post('/external/login', async (req: AuthenticatedRequest, res: Response) 
 });
 
 // External Portal SSO Callback (Proxy from frontend)
-router.post('/external/sso', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/external/sso', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { token } = req.body;
 
@@ -198,7 +206,7 @@ router.post('/external/sso', async (req: AuthenticatedRequest, res: Response) =>
 });
 
 // Student Direct Login (Matrícula + Código de Acesso da Turma)
-router.post('/student-login', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/student-login', authLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { registration, accessCode } = req.body;
 

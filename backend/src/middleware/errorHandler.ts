@@ -12,17 +12,18 @@ export class AppError extends Error {
     public statusCode: number = 500
   ) {
     super(message);
+    Object.setPrototypeOf(this, AppError.prototype);
   }
 }
 
 export const errorHandler = (
-  err: AppError | Error,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ error: err.message });
+  if (err instanceof AppError || err.statusCode) {
+    return res.status(err.statusCode || 400).json({ error: err.message });
   }
 
   console.error('Error:', err);

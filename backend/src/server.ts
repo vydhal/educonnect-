@@ -17,15 +17,26 @@ import badgeTypesRoutes from './routes/badgetypes.routes.js';
 import externalRoutes from './routes/external.routes.js';
 import path from 'path';
 
+import helmet from 'helmet';
+import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app: Express = express();
 app.enable('trust proxy');
 const port = parseInt(process.env.PORT || '5000', 10);
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Prisma is initialized in ./prisma/client.js
 
-// Middleware
+// Security Headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+// Global API Rate Limiter
+app.use('/api', generalLimiter);
+
+// Middleware CORS
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
@@ -38,15 +49,23 @@ app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('172.20.160.1')) {
+
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (!allowed) return false;
+      return origin === allowed || origin.endsWith(allowed.replace(/^https?:\/\//, ''));
+    });
+
+    if (isAllowed || !isProduction) {
       return callback(null, true);
     }
-    return callback(null, true); // During dev, let's be flexible
+
+    return callback(new Error(`Origem ${origin} não autorizada pela política de CORS`));
   },
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Static files
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));

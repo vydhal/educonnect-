@@ -3,7 +3,9 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { AppError } from '../middleware/errorHandler.js'; // Ensure correct path or remove if not needed for simple upload
+import { authMiddleware } from '../middleware/auth.js';
+import { uploadLimiter } from '../middleware/rateLimiter.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -41,8 +43,8 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-// Upload endpoint
-router.post('/', upload.single('file'), (req: Request, res: Response) => {
+// Upload endpoint (Protegido por autenticação e limitador de taxa)
+router.post('/', authMiddleware, uploadLimiter, upload.single('file'), (req: Request, res: Response) => {
     try {
         if (!req.file) {
             throw new Error('Please upload a file');
